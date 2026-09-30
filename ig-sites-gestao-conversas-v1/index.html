@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IG Sites — Gestão de Conversas</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><b>IG</b><div><strong>IG Sites</strong><small>GESTÃO COMERCIAL</small></div></div>
+  <nav>
+    <button class="nav active" data-view="dashboard">▦ Visão geral</button>
+    <button class="nav" data-view="conversations">💬 Conversas <i id="navCount">0</i></button>
+    <button class="nav" data-view="funnel">⇢ Funil</button>
+    <button class="nav" data-view="analysis">◈ Análise</button>
+    <button class="nav" data-view="notes">📝 Anotações</button>
+    <button class="nav" data-view="settings">⚙ Configurações</button>
+  </nav>
+  <div class="readonly"><span>🔒</span><div><b>Modo somente leitura</b><small>WhatsApp não conectado<br>Nenhuma mensagem é enviada</small></div></div>
+</aside>
+
+<main>
+<header><span>IG Sites / <b id="title">Visão geral</b></span><span class="badge">● SOMENTE ANÁLISE</span></header>
+
+<section id="dashboard" class="view active">
+  <div class="head"><div><small>CENTRO DE CONTROLE</small><h1>Visão geral</h1><p>Veja como suas conversas estão evoluindo.</p></div>
+  <button class="primary" id="newConversation">＋ Registrar conversa</button></div>
+  <div class="safe">🔒 <b>Sem envio de mensagens.</b> Este painel serve apenas para organizar e analisar seus contatos.</div>
+  <div class="stats">
+    <div><span>Conversas</span><b id="sTotal">0</b></div>
+    <div><span>Responderam</span><b id="sAnswered">0</b></div>
+    <div><span>Interessados</span><b id="sInterested">0</b></div>
+    <div><span>Fechadas</span><b id="sWon">0</b></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>Funil atual</h2><div id="bars"></div></div>
+    <div class="card"><h2>Conversas recentes</h2><div id="recent"></div></div>
+  </div>
+</section>
+
+<section id="conversations" class="view">
+  <div class="head"><div><small>CRM DE CONVERSAS</small><h1>Conversas</h1><p>Organize e consulte seus contatos.</p></div>
+  <button class="primary" id="newConversation2">＋ Registrar conversa</button></div>
+  <div class="toolbar"><input id="search" placeholder="Buscar empresa, telefone ou observação">
+  <select id="stageFilter"><option value="">Todas as etapas</option></select></div>
+  <div class="card table"><table><thead><tr><th>Empresa</th><th>Telefone</th><th>Etapa</th><th>Última atividade</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+</section>
+
+<section id="funnel" class="view">
+  <div class="head"><div><small>PIPELINE</small><h1>Funil comercial</h1><p>Acompanhe em qual ponto cada conversa está.</p></div></div>
+  <div class="board" id="board"></div>
+</section>
+
+<section id="analysis" class="view">
+  <div class="head"><div><small>INTELIGÊNCIA COMERCIAL</small><h1>Análise</h1><p>Use os dados para entender o que está funcionando.</p></div></div>
+  <div class="stats">
+    <div><span>Taxa de resposta</span><b id="responseRate">0%</b></div>
+    <div><span>Taxa de interesse</span><b id="interestRate">0%</b></div>
+    <div><span>Pedido de modelo</span><b id="modelRate">0%</b></div>
+    <div><span>Conversão em venda</span><b id="saleRate">0%</b></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>Onde as conversas estão parando?</h2><div id="dropoff"></div></div>
+    <div class="card"><h2>Tempo até primeira resposta</h2><div id="timing"></div></div>
+  </div>
+  <div class="card insight" id="insight"></div>
+</section>
+
+<section id="notes" class="view">
+  <div class="head"><div><small>ACOMPANHAMENTO</small><h1>Anotações</h1><p>Registre observações para não perder o contexto dos leads.</p></div></div>
+  <div id="notesList"></div>
+</section>
+
+<section id="settings" class="view">
+  <div class="head"><div><small>SEGURANÇA</small><h1>Configurações</h1><p>Estado atual da plataforma.</p></div></div>
+  <div class="card settings">
+    <p><b>WhatsApp</b><span class="green">Desconectado</span></p>
+    <p><b>Envio de mensagens</b><span class="green">Bloqueado por design</span></p>
+    <p><b>Automação</b><span>Desativada</span></p>
+    <p><b>Dados</b><span>Armazenados localmente neste navegador</span></p>
+  </div>
+  <div class="safe">Esta versão não possui API, webhook, bot ou rotina de envio para WhatsApp.</div>
+</section>
+</main>
+</div>
+
+<div id="modal" class="modal">
+<div class="modalbox">
+<h2>Registrar conversa</h2>
+<p class="muted">Você só está cadastrando informações para análise. Nenhuma mensagem será enviada.</p>
+<form id="form">
+<input name="company" required placeholder="Empresa">
+<input name="phone" required placeholder="Telefone">
+<select name="stage" id="newStage"></select>
+<input name="firstReply" type="number" min="0" placeholder="Minutos até primeira resposta (opcional)">
+<textarea name="note" placeholder="Observação sobre a conversa"></textarea>
+<div><button type="button" class="secondary" id="cancel">Cancelar</button><button class="primary">Salvar</button></div>
+</form>
+</div></div>
+
+<div id="conversationModal" class="modal">
+<div class="modalbox large">
+<div class="modalTop"><div><h2 id="detailName">Conversa</h2><p id="detailMeta" class="muted"></p></div><button class="secondary" id="closeDetail">Fechar</button></div>
+<div class="detailGrid"><div><h3>Resumo</h3><div id="detailSummary" class="summary"></div></div><div><h3>Observações</h3><textarea id="detailNote" placeholder="Escreva sua observação..."></textarea><button class="primary" id="saveNote">Salvar anotação</button></div></div>
+<div class="readonlyBox">🔒 <b>Somente leitura.</b> O histórico abaixo é para consulta/análise. Não existe função de responder por esta plataforma.</div>
+<div id="history" class="history"></div>
+</div></div>
+
+<script src="app.js"></script>
+</body>
+</html>
