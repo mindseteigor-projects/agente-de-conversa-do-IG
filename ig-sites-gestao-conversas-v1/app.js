@@ -1,1735 +1,2158 @@
-/* =========================================================
+/* ============================================================
    IG SITES — GESTÃO DE CONVERSAS
-   Versão com importação automática de listas
-   SOMENTE LEITURA — NÃO ENVIA MENSAGENS
-   ========================================================= */
+   app.js — versão corrigida
+   ============================================================
 
-const stages = [
-  'Prospectado',
-  'Respondeu',
-  'Em atendimento',
-  'Interessado',
-  'Pediu modelo',
-  'Orçamento / negociação',
-  'Venda fechada',
-  'Não avançou'
-];
+   IMPORTANTE:
+   - Não conecta ao WhatsApp.
+   - Não envia mensagens.
+   - Os dados ficam no localStorage.
+   - O importador separa corretamente cada contato.
+   ============================================================ */
 
-/* =========================================================
-   DADOS
-   ========================================================= */
+const STORAGE_KEY = "ig_sites_conversas";
+const NOTES_KEY = "ig_sites_anotacoes";
 
-let conversations = JSON.parse(
-  localStorage.getItem('igs_conversations') || 'null'
-) || [
+/* ============================================================
+   DADOS INICIAIS
+   ============================================================ */
+
+const dadosIniciais = [
   {
     id: 1,
-    company: 'Oficina Exemplo',
-    phone: '(41) 99999-1111',
-    stage: 'Interessado',
-    firstReply: 18,
-    updated: '2026-09-25',
-    note: 'Demonstrou interesse no site. Acompanhar próximo passo.',
-    history: [
+    empresa: "Oficina Exemplo",
+    telefone: "(41) 99999-1111",
+    etapa: "Interessado",
+    ultimaAtividade: "2026-09-25",
+    observacao: "Demonstrou interesse no site.",
+    historico: [
       {
-        from: 'ig',
-        text: 'Olá! Tudo bem? Falo com o responsável pela Oficina Exemplo?',
-        time: '09:10'
-      },
-      {
-        from: 'client',
-        text: 'Olá, sim. Pode falar.',
-        time: '09:28'
-      },
-      {
-        from: 'ig',
-        text: 'Encontrei vocês no Google e queria apresentar uma ideia de site para o negócio.',
-        time: '09:30'
-      },
-      {
-        from: 'client',
-        text: 'Tenho interesse. Como seria?',
-        time: '09:36'
+        data: "2026-09-25",
+        texto: "Cliente demonstrou interesse."
       }
     ]
   },
-
   {
     id: 2,
-    company: 'Estética Modelo',
-    phone: '(41) 98888-2222',
-    stage: 'Pediu modelo',
-    firstReply: 7,
-    updated: '2026-09-24',
-    note: 'Pediu para ver um exemplo de site.',
-    history: [
+    empresa: "Estética Modelo",
+    telefone: "(41) 98888-2222",
+    etapa: "Pediu modelo",
+    ultimaAtividade: "2026-09-24",
+    observacao: "Pediu para ver um modelo.",
+    historico: [
       {
-        from: 'ig',
-        text: 'Olá! Tudo bem? Falo com o responsável pela Estética Modelo?',
-        time: '14:02'
-      },
-      {
-        from: 'client',
-        text: 'Sim, sou eu.',
-        time: '14:09'
-      },
-      {
-        from: 'ig',
-        text: 'Encontrei vocês no Google e tenho uma ideia de apresentação online para o negócio.',
-        time: '14:10'
-      },
-      {
-        from: 'client',
-        text: 'Pode me mandar um modelo?',
-        time: '14:12'
+        data: "2026-09-24",
+        texto: "Pediu modelo do site."
       }
     ]
   },
-
   {
     id: 3,
-    company: 'Mercado Fictício',
-    phone: '(41) 97777-3333',
-    stage: 'Respondeu',
-    firstReply: 42,
-    updated: '2026-09-23',
-    note: 'Respondeu, mas conversa não avançou.',
-    history: [
+    empresa: "Mercado Fictício",
+    telefone: "(41) 97777-3333",
+    etapa: "Respondeu",
+    ultimaAtividade: "2026-09-23",
+    observacao: "Respondeu à abordagem.",
+    historico: [
       {
-        from: 'ig',
-        text: 'Olá! Tudo bem? Falo com o responsável pelo Mercado Fictício?',
-        time: '11:15'
-      },
-      {
-        from: 'client',
-        text: 'Sim.',
-        time: '11:57'
+        data: "2026-09-23",
+        texto: "Respondeu à mensagem inicial."
       }
     ]
   },
-
   {
     id: 4,
-    company: 'Studio Demonstração',
-    phone: '(41) 96666-4444',
-    stage: 'Orçamento / negociação',
-    firstReply: 12,
-    updated: '2026-09-22',
-    note: 'Chegou na etapa de negociação.',
-    history: [
+    empresa: "Studio Demonstração",
+    telefone: "(41) 96666-4444",
+    etapa: "Orçamento / negociação",
+    ultimaAtividade: "2026-09-22",
+    observacao: "Entrou em conversa sobre preço.",
+    historico: [
       {
-        from: 'ig',
-        text: 'Olá! Tudo bem? Falo com o responsável pelo Studio Demonstração?',
-        time: '10:20'
-      },
-      {
-        from: 'client',
-        text: 'Sim, sou responsável.',
-        time: '10:32'
-      },
-      {
-        from: 'client',
-        text: 'Quanto fica para fazer um site?',
-        time: '10:34'
+        data: "2026-09-22",
+        texto: "Conversa sobre orçamento."
       }
     ]
   },
-
   {
     id: 5,
-    company: 'Café Ilustrativo',
-    phone: '(41) 95555-5555',
-    stage: 'Não avançou',
-    firstReply: 0,
-    updated: '2026-09-20',
-    note: 'Não respondeu à abordagem inicial.',
-    history: [
+    empresa: "Café Ilustrativo",
+    telefone: "(41) 95555-5555",
+    etapa: "Não avançou",
+    ultimaAtividade: "2026-09-20",
+    observacao: "Não demonstrou interesse.",
+    historico: [
       {
-        from: 'ig',
-        text: 'Olá! Tudo bem? Falo com o responsável pelo Café Ilustrativo?',
-        time: '16:05'
+        data: "2026-09-20",
+        texto: "Não avançou."
       }
     ]
   },
-
   {
     id: 6,
-    company: 'Auto Demo',
-    phone: '(41) 94444-6666',
-    stage: 'Venda fechada',
-    firstReply: 5,
-    updated: '2026-09-19',
-    note: 'Venda marcada como fechada pelo usuário.',
-    history: [
+    empresa: "Auto Demo",
+    telefone: "(41) 94444-6666",
+    etapa: "Venda fechada",
+    ultimaAtividade: "2026-09-19",
+    observacao: "Venda fechada.",
+    historico: [
       {
-        from: 'ig',
-        text: 'Olá! Tudo bem? Falo com o responsável pela Auto Demo?',
-        time: '08:40'
-      },
-      {
-        from: 'client',
-        text: 'Sim.',
-        time: '08:45'
-      },
-      {
-        from: 'client',
-        text: 'Gostei da ideia e quero seguir.',
-        time: '08:52'
+        data: "2026-09-19",
+        texto: "Venda fechada."
       }
     ]
   }
 ];
 
-let selectedId = null;
-
-/* =========================================================
+/* ============================================================
    FUNÇÕES BÁSICAS
-   ========================================================= */
+   ============================================================ */
 
-const $ = id => document.getElementById(id);
+function gerarId() {
+  return Date.now() + Math.floor(Math.random() * 100000);
+}
 
-const save = () => {
+function hoje() {
+  const agora = new Date();
+
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+function normalizarTelefone(telefone) {
+  return String(telefone || "")
+    .replace(/\D/g, "")
+    .replace(/^55/, "");
+}
+
+function formatarTelefone(telefone) {
+  const numero = String(telefone || "").replace(/\D/g, "");
+
+  if (numero.length === 11) {
+    return `(${numero.substring(0, 2)}) ${numero.substring(2, 7)}-${numero.substring(7)}`;
+  }
+
+  if (numero.length === 10) {
+    return `(${numero.substring(0, 2)}) ${numero.substring(2, 6)}-${numero.substring(6)}`;
+  }
+
+  return telefone;
+}
+
+function escaparHTML(texto) {
+  return String(texto || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+
+function carregarConversas() {
+  try {
+    const dados = localStorage.getItem(STORAGE_KEY);
+
+    if (!dados) {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(dadosIniciais)
+      );
+
+      return [...dadosIniciais];
+    }
+
+    const conversas = JSON.parse(dados);
+
+    return Array.isArray(conversas) ? conversas : [];
+  } catch (erro) {
+    console.error("Erro ao carregar conversas:", erro);
+    return [];
+  }
+}
+
+function salvarConversas(conversas) {
   localStorage.setItem(
-    'igs_conversations',
-    JSON.stringify(conversations)
+    STORAGE_KEY,
+    JSON.stringify(conversas)
   );
-};
+}
 
-const esc = value =>
-  String(value ?? '').replace(
-    /[&<>"']/g,
-    char => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;'
-    }[char])
+function carregarAnotacoes() {
+  try {
+    const dados = localStorage.getItem(NOTES_KEY);
+
+    if (!dados) return [];
+
+    const anotacoes = JSON.parse(dados);
+
+    return Array.isArray(anotacoes) ? anotacoes : [];
+  } catch (erro) {
+    console.error("Erro ao carregar anotações:", erro);
+    return [];
+  }
+}
+
+function salvarAnotacoes(anotacoes) {
+  localStorage.setItem(
+    NOTES_KEY,
+    JSON.stringify(anotacoes)
   );
-
-const countStage = stage =>
-  conversations.filter(c => c.stage === stage).length;
-
-/* =========================================================
-   RENDERIZAÇÃO PRINCIPAL
-   ========================================================= */
-
-function render() {
-
-  const total = conversations.length;
-
-  const answered = conversations.filter(
-    c => c.stage !== 'Prospectado'
-  ).length;
-
-  const interested = conversations.filter(
-    c =>
-      [
-        'Interessado',
-        'Pediu modelo',
-        'Orçamento / negociação',
-        'Venda fechada'
-      ].includes(c.stage)
-  ).length;
-
-  $('sTotal').textContent = total;
-  $('sAnswered').textContent = answered;
-  $('sInterested').textContent = interested;
-  $('sWon').textContent = countStage('Venda fechada');
-
-  if ($('navCount')) {
-    $('navCount').textContent = total;
-  }
-
-  /* FUNIL DA VISÃO GERAL */
-
-  const max = Math.max(
-    ...stages.map(countStage),
-    1
-  );
-
-  if ($('bars')) {
-    $('bars').innerHTML = stages
-      .map(stage => `
-        <div class="barline">
-          <div>
-            <span>${esc(stage)}</span>
-            <b>${countStage(stage)}</b>
-          </div>
-
-          <div class="bar">
-            <i style="width:${Math.max(
-              countStage(stage) ? 5 : 0,
-              countStage(stage) / max * 100
-            )}%"></i>
-          </div>
-        </div>
-      `)
-      .join('');
-  }
-
-  /* CONVERSAS RECENTES */
-
-  if ($('recent')) {
-
-    $('recent').innerHTML =
-      conversations
-        .slice()
-        .sort((a, b) => b.id - a.id)
-        .slice(0, 5)
-        .map(c => `
-          <div class="recent">
-            <b>${esc(c.company)}</b>
-            <small>
-              ${esc(c.phone)} •
-              ${esc(c.stage)} •
-              ${esc(c.updated)}
-            </small>
-          </div>
-        `)
-        .join('') ||
-      '<div class="empty">Nenhuma conversa registrada.</div>';
-  }
-
-  /* LISTA DE CONVERSAS */
-
-  const searchInput = $('search');
-
-  const q = searchInput
-    ? (searchInput.value || '').toLowerCase()
-    : '';
-
-  const filter = $('stageFilter')
-    ? $('stageFilter').value
-    : '';
-
-  const list = conversations.filter(c => {
-
-    const text = [
-      c.company,
-      c.phone,
-      c.note
-    ]
-      .join(' ')
-      .toLowerCase();
-
-    return (
-      (!q || text.includes(q)) &&
-      (!filter || c.stage === filter)
-    );
-  });
-
-  if ($('rows')) {
-
-    $('rows').innerHTML =
-      list
-        .map(c => `
-          <tr>
-            <td>
-              <b>${esc(c.company)}</b>
-            </td>
-
-            <td>
-              ${esc(c.phone)}
-            </td>
-
-            <td>
-              <span class="pill">
-                ${esc(c.stage)}
-              </span>
-            </td>
-
-            <td>
-              ${esc(c.updated)}
-            </td>
-
-            <td>
-              <button
-                class="secondary"
-                onclick="openConversation(${c.id})">
-                Ver conversa
-              </button>
-            </td>
-          </tr>
-        `)
-        .join('') ||
-      `
-        <tr>
-          <td colspan="5" class="empty">
-            Nenhum resultado.
-          </td>
-        </tr>
-      `;
-  }
-
-  /* QUADRO DO FUNIL */
-
-  if ($('board')) {
-
-    $('board').innerHTML = stages
-      .map(stage => `
-        <div class="col">
-
-          <b>
-            ${esc(stage)}
-            (${countStage(stage)})
-          </b>
-
-          ${
-            conversations
-              .filter(c => c.stage === stage)
-              .map(c => `
-                <div
-                  class="ticket"
-                  onclick="openConversation(${c.id})">
-
-                  <b>${esc(c.company)}</b>
-
-                  <small>
-                    ${esc(c.phone)}
-                  </small>
-
-                </div>
-              `)
-              .join('') ||
-            '<p class="empty">Nenhuma conversa.</p>'
-          }
-
-        </div>
-      `)
-      .join('');
-  }
-
-  /* =====================================================
-     ANÁLISE
-     ===================================================== */
-
-  const model = conversations.filter(
-    c =>
-      [
-        'Pediu modelo',
-        'Orçamento / negociação',
-        'Venda fechada'
-      ].includes(c.stage)
-  ).length;
-
-  if ($('responseRate')) {
-    $('responseRate').textContent =
-      total
-        ? Math.round(answered / total * 100) + '%'
-        : '0%';
-  }
-
-  if ($('interestRate')) {
-    $('interestRate').textContent =
-      answered
-        ? Math.round(interested / answered * 100) + '%'
-        : '0%';
-  }
-
-  if ($('modelRate')) {
-    $('modelRate').textContent =
-      total
-        ? Math.round(model / total * 100) + '%'
-        : '0%';
-  }
-
-  if ($('saleRate')) {
-    $('saleRate').textContent =
-      total
-        ? Math.round(
-            countStage('Venda fechada') /
-            total *
-            100
-          ) + '%'
-        : '0%';
-  }
-
-  if ($('dropoff')) {
-
-    $('dropoff').innerHTML = stages
-      .map(stage => `
-        <div class="barline">
-
-          <div>
-            <span>${esc(stage)}</span>
-            <b>${countStage(stage)}</b>
-          </div>
-
-          <div class="bar">
-            <i style="width:${Math.max(
-              countStage(stage) ? 4 : 0,
-              countStage(stage) / max * 100
-            )}%"></i>
-          </div>
-
-        </div>
-      `)
-      .join('');
-  }
-
-  const replies = conversations
-    .map(c => Number(c.firstReply))
-    .filter(n => n > 0);
-
-  const averageReply =
-    replies.length
-      ? Math.round(
-          replies.reduce(
-            (a, b) => a + b,
-            0
-          ) / replies.length
-        )
-      : 0;
-
-  if ($('timing')) {
-
-    $('timing').innerHTML = `
-      <p>
-        <b>Média até primeira resposta:</b>
-        ${averageReply} minutos
-      </p>
-
-      <p>
-        <b>Mais rápida:</b>
-        ${replies.length ? Math.min(...replies) : 0}
-        minutos
-      </p>
-
-      <p>
-        <b>Mais demorada:</b>
-        ${replies.length ? Math.max(...replies) : 0}
-        minutos
-      </p>
-    `;
-  }
-
-  if ($('insight')) {
-
-    $('insight').innerHTML = `
-      <h2>Leitura dos dados</h2>
-
-      <p>
-        Hoje há <b>${answered}</b> conversas que
-        responderam e <b>${interested}</b> que chegaram
-        a interesse, pedido de modelo ou negociação.
-      </p>
-
-      <p>
-        Use esses números para descobrir em qual etapa
-        você mais perde contatos.
-      </p>
-    `;
-  }
-
-  /* ANOTAÇÕES */
-
-  if ($('notesList')) {
-
-    $('notesList').innerHTML =
-      conversations
-        .map(c => `
-          <div class="card notesItem">
-
-            <h3>
-              ${esc(c.company)}
-
-              <span class="pill">
-                ${esc(c.stage)}
-              </span>
-            </h3>
-
-            <p>
-              ${esc(
-                c.note ||
-                'Sem anotação.'
-              )}
-            </p>
-
-            <small>
-              ${esc(c.phone)}
-            </small>
-
-          </div>
-        `)
-        .join('') ||
-      `
-        <div class="card empty">
-          Nenhuma anotação.
-        </div>
-      `;
-  }
 }
 
-/* =========================================================
-   NAVEGAÇÃO
-   ========================================================= */
+/* ============================================================
+   ETAPAS
+   ============================================================ */
 
-function show(view) {
+const ETAPAS = [
+  "Prospectado",
+  "Respondeu",
+  "Interessado",
+  "Pediu modelo",
+  "Orçamento / negociação",
+  "Venda fechada",
+  "Não avançou"
+];
 
-  document
-    .querySelectorAll('.view')
-    .forEach(element => {
-
-      element.classList.toggle(
-        'active',
-        element.id === view
-      );
-
-    });
-
-  document
-    .querySelectorAll('.nav')
-    .forEach(element => {
-
-      element.classList.toggle(
-        'active',
-        element.dataset.view === view
-      );
-
-    });
-
-  const titles = {
-    dashboard: 'Visão geral',
-    conversations: 'Conversas',
-    funnel: 'Funil',
-    analysis: 'Análise',
-    notes: 'Anotações',
-    settings: 'Configurações'
-  };
-
-  if ($('title')) {
-    $('title').textContent =
-      titles[view] || 'Visão geral';
-  }
+function etapaValida(etapa) {
+  return ETAPAS.includes(etapa);
 }
 
-document
-  .querySelectorAll('.nav')
-  .forEach(nav => {
+/* ============================================================
+   DETECÇÃO DE ETAPA
+   ============================================================ */
 
-    nav.onclick = () => {
-      show(nav.dataset.view);
-    };
+function detectarEtapa(texto) {
+  const original = String(texto || "").trim();
 
-  });
+  const textoNormalizado = original
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
-/* =========================================================
-   FILTROS
-   ========================================================= */
+  /*
+     ORDEM IMPORTANTE:
+     frases mais específicas vêm antes das genéricas.
+  */
 
-if ($('stageFilter')) {
-
-  stages.forEach(stage => {
-
-    $('stageFilter').insertAdjacentHTML(
-      'beforeend',
-      `<option value="${esc(stage)}">
-        ${esc(stage)}
-      </option>`
-    );
-
-  });
-
-  $('stageFilter').onchange = render;
-}
-
-if ($('search')) {
-  $('search').oninput = render;
-}
-
-/* =========================================================
-   CADASTRO MANUAL
-   ========================================================= */
-
-function openNewConversation() {
-
-  if ($('modal')) {
-    $('modal').classList.add('show');
-  }
-}
-
-if ($('newConversation')) {
-  $('newConversation').onclick =
-    openNewConversation;
-}
-
-if ($('newConversation2')) {
-  $('newConversation2').onclick =
-    openNewConversation;
-}
-
-if ($('cancel')) {
-
-  $('cancel').onclick = () => {
-
-    $('modal').classList.remove('show');
-
-  };
-}
-
-if ($('newStage')) {
-
-  stages.forEach(stage => {
-
-    $('newStage').insertAdjacentHTML(
-      'beforeend',
-      `<option value="${esc(stage)}">
-        ${esc(stage)}
-      </option>`
-    );
-
-  });
-}
-
-if ($('form')) {
-
-  $('form').onsubmit = event => {
-
-    event.preventDefault();
-
-    const formData =
-      new FormData(event.target);
-
-    const company =
-      String(formData.get('company') || '').trim();
-
-    const phone =
-      String(formData.get('phone') || '').trim();
-
-    if (!company || !phone) {
-      alert('Preencha empresa e telefone.');
-      return;
-    }
-
-    conversations.push({
-
-      id: Date.now(),
-
-      company,
-
-      phone,
-
-      stage:
-        formData.get('stage') ||
-        'Prospectado',
-
-      firstReply:
-        Number(
-          formData.get('firstReply') || 0
-        ),
-
-      updated:
-        new Date()
-          .toISOString()
-          .slice(0, 10),
-
-      note:
-        String(
-          formData.get('note') || ''
-        ).trim(),
-
-      history: []
-
-    });
-
-    save();
-
-    render();
-
-    event.target.reset();
-
-    $('modal').classList.remove('show');
-
-  };
-}
-
-/* =========================================================
-   ABRIR CONVERSA
-   ========================================================= */
-
-window.openConversation = function(id) {
-
-  selectedId = id;
-
-  const conversation =
-    conversations.find(
-      item => item.id === id
-    );
-
-  if (!conversation) {
-    return;
+  // Venda fechada
+  if (
+    textoNormalizado.includes("venda fechada") ||
+    textoNormalizado.includes("venda realizada") ||
+    textoNormalizado.includes("fechou") ||
+    textoNormalizado.includes("cliente fechado") ||
+    textoNormalizado.includes("fechamento")
+  ) {
+    return "Venda fechada";
   }
 
-  $('detailName').textContent =
-    conversation.company;
-
-  $('detailMeta').textContent =
-    `${conversation.phone} • ` +
-    `${conversation.stage} • ` +
-    `última atividade ${conversation.updated}`;
-
-  $('detailSummary').innerHTML = `
-
-    <b>Etapa:</b>
-    ${esc(conversation.stage)}
-    <br>
-
-    <b>Tempo até primeira resposta:</b>
-    ${
-      conversation.firstReply
-        ? conversation.firstReply +
-          ' minutos'
-        : 'Não respondeu'
-    }
-
-    <br>
-
-    <b>Observação:</b>
-    ${esc(
-      conversation.note ||
-      'Nenhuma'
-    )}
-
-  `;
-
-  $('detailNote').value =
-    conversation.note || '';
+  // Não avançou
+  if (
+    textoNormalizado.includes("nao tenho interesse") ||
+    textoNormalizado.includes("sem interesse") ||
+    textoNormalizado.includes("nao quero") ||
+    textoNormalizado.includes("nao tenho") ||
+    textoNormalizado.includes("não tenho interesse")
+  ) {
+    return "Não avançou";
+  }
 
   if (
-    conversation.history &&
-    conversation.history.length
+    textoNormalizado.includes("nao avancou") ||
+    textoNormalizado.includes("não avançou")
   ) {
-
-    $('history').innerHTML =
-      conversation.history
-        .map(message => `
-
-          <div class="bubble ${
-            message.from === 'client'
-              ? 'client'
-              : 'ig'
-          }">
-
-            ${esc(message.text)}
-
-            <small>
-              ${
-                message.from === 'client'
-                  ? 'Cliente'
-                  : 'IG Sites'
-              }
-
-              •
-              ${esc(message.time || '')}
-            </small>
-
-          </div>
-
-        `)
-        .join('');
-
-  } else {
-
-    $('history').innerHTML = `
-      <div class="empty">
-        Nenhuma mensagem registrada
-        nesta conversa.
-      </div>
-    `;
-
+    return "Não avançou";
   }
 
-  $('conversationModal')
-    .classList.add('show');
-};
+  // Orçamento / negociação
+  if (
+    textoNormalizado.includes("orcamento") ||
+    textoNormalizado.includes("orçamento") ||
+    textoNormalizado.includes("negociacao") ||
+    textoNormalizado.includes("negociação") ||
+    textoNormalizado.includes("quanto custa") ||
+    textoNormalizado.includes("quanto fica") ||
+    textoNormalizado.includes("qual o preco") ||
+    textoNormalizado.includes("qual o preço") ||
+    textoNormalizado.includes("preco") ||
+    textoNormalizado.includes("preço")
+  ) {
+    return "Orçamento / negociação";
+  }
 
-if ($('closeDetail')) {
+  // Pediu modelo
+  if (
+    textoNormalizado.includes("pediu modelo") ||
+    textoNormalizado.includes("pedir modelo") ||
+    textoNormalizado.includes("manda o modelo") ||
+    textoNormalizado.includes("mandar modelo") ||
+    textoNormalizado.includes("mande o modelo") ||
+    textoNormalizado.includes("enviar modelo") ||
+    textoNormalizado.includes("envia o modelo") ||
+    textoNormalizado.includes("ver o modelo") ||
+    textoNormalizado.includes("ver modelo") ||
+    textoNormalizado.includes("quer ver o site") ||
+    textoNormalizado.includes("quero ver o modelo") ||
+    textoNormalizado.includes("modelo do site")
+  ) {
+    return "Pediu modelo";
+  }
 
-  $('closeDetail').onclick = () => {
+  // Interessado
+  if (
+    textoNormalizado.includes("tenho interesse") ||
+    textoNormalizado.includes("interessado") ||
+    textoNormalizado.includes("interesse") ||
+    textoNormalizado.includes("gostei") ||
+    textoNormalizado.includes("quero fazer") ||
+    textoNormalizado.includes("quero sim") ||
+    textoNormalizado.includes("vamos fazer") ||
+    textoNormalizado.includes("pode fazer")
+  ) {
+    return "Interessado";
+  }
 
-    $('conversationModal')
-      .classList.remove('show');
+  // Respondeu
+  if (
+    textoNormalizado === "respondeu" ||
+    textoNormalizado.includes("respondeu")
+  ) {
+    return "Respondeu";
+  }
 
-  };
+  /*
+     "WhatsApp confirmado" NÃO é uma etapa.
+     Portanto, cai em Prospectado.
+  */
+
+  return "Prospectado";
 }
 
-if ($('saveNote')) {
+/* ============================================================
+   DETECÇÃO DE TELEFONE
+   ============================================================ */
 
-  $('saveNote').onclick = () => {
+function extrairTelefone(texto) {
+  if (!texto) return null;
 
-    const conversation =
-      conversations.find(
-        item => item.id === selectedId
-      );
+  /*
+     Aceita exemplos como:
+     (41) 99999-9999
+     (41) 9999-9999
+     41999999999
+     5541999999999
+     +55 41 99999-9999
+  */
 
-    if (!conversation) {
+  const padrao = /(?:\+?55[\s.-]*)?(?:\(?\d{2}\)?[\s.-]*)?(?:9[\s.-]*)?\d{4}[\s.-]*\d{4}/;
+
+  const resultado = String(texto).match(padrao);
+
+  if (!resultado) return null;
+
+  const numero = resultado[0];
+
+  const somenteNumeros = numero.replace(/\D/g, "");
+
+  /*
+     Telefones brasileiros normalmente terão
+     pelo menos 10 dígitos sem o 55.
+  */
+
+  const sem55 = somenteNumeros.startsWith("55")
+    ? somenteNumeros.substring(2)
+    : somenteNumeros;
+
+  if (sem55.length < 10 || sem55.length > 11) {
+    return null;
+  }
+
+  return formatarTelefone(sem55);
+}
+
+function linhaEhTelefone(linha) {
+  return !!extrairTelefone(linha);
+}
+
+/* ============================================================
+   LIMPEZA DE LINHAS
+   ============================================================ */
+
+function limparLinhas(texto) {
+  return String(texto || "")
+    .split(/\r?\n/)
+    .map(linha => linha.trim())
+    .filter(linha => linha.length > 0);
+}
+
+/* ============================================================
+   IMPORTADOR CORRIGIDO
+   ============================================================
+
+   O problema anterior era que o parser mantinha o primeiro
+   nome como empresa e aplicava esse nome aos telefones seguintes.
+
+   Agora o parser trabalha por CONTATO.
+
+   Exemplo:
+
+   Oficina Motor Sul
+   (41) 99999-1001
+   WhatsApp confirmado
+
+   Estética Bella Vida
+   (41) 98888-1002
+   Respondeu
+
+   Cada bloco gera um contato diferente.
+   ============================================================ */
+
+function analisarLista(texto) {
+  const linhas = limparLinhas(texto);
+
+  const contatos = [];
+
+  /*
+     Primeiro tentamos o formato recomendado:
+     blocos separados por linhas vazias.
+
+     Como limparLinhas remove as linhas vazias, fazemos uma
+     segunda leitura para preservar os blocos.
+  */
+
+  const blocos = String(texto || "")
+    .split(/\r?\n\s*\r?\n/)
+    .map(bloco => {
+      return bloco
+        .split(/\r?\n/)
+        .map(linha => linha.trim())
+        .filter(Boolean);
+    })
+    .filter(bloco => bloco.length > 0);
+
+  /*
+     Caso existam blocos separados corretamente,
+     usamos o formato de blocos.
+  */
+
+  for (const bloco of blocos) {
+    const telefoneIndex = bloco.findIndex(linha =>
+      linhaEhTelefone(linha)
+    );
+
+    if (telefoneIndex === -1) {
+      continue;
+    }
+
+    const telefone = extrairTelefone(bloco[telefoneIndex]);
+
+    /*
+       A empresa é a linha imediatamente anterior ao telefone.
+    */
+
+    let empresa = "";
+
+    if (telefoneIndex > 0) {
+      empresa = bloco[telefoneIndex - 1].trim();
+    }
+
+    /*
+       Se houver algum texto antes do telefone além do nome,
+       usamos a primeira linha como empresa.
+    */
+
+    if (!empresa && bloco.length > 0) {
+      empresa = bloco[0].trim();
+    }
+
+    /*
+       Tudo que vem depois do telefone é considerado
+       informação/status/observação.
+    */
+
+    const informacoes = bloco
+      .slice(telefoneIndex + 1)
+      .filter(Boolean);
+
+    const textoInformacoes = informacoes.join(" | ");
+
+    const etapa = detectarEtapa(textoInformacoes);
+
+    /*
+       Se não houver informação depois do telefone,
+       o contato entra como Prospectado.
+    */
+
+    contatos.push({
+      empresa: empresa || "Empresa sem nome",
+      telefone,
+      etapa,
+      observacao: textoInformacoes || "",
+      fonte: "importacao"
+    });
+  }
+
+  /*
+     FALLBACK:
+     Se o usuário colar uma lista sem linhas vazias,
+     fazemos uma segunda estratégia.
+
+     Procuramos cada telefone e usamos a linha anterior
+     como nome da empresa.
+  */
+
+  if (contatos.length === 0) {
+    const linhasCompletas = String(texto || "")
+      .split(/\r?\n/)
+      .map(linha => linha.trim())
+      .filter(Boolean);
+
+    for (let i = 0; i < linhasCompletas.length; i++) {
+      const linhaAtual = linhasCompletas[i];
+
+      if (!linhaEhTelefone(linhaAtual)) {
+        continue;
+      }
+
+      const telefone = extrairTelefone(linhaAtual);
+
+      let empresa = "";
+
+      /*
+         Procuramos para trás a primeira linha que não seja
+         telefone.
+      */
+
+      for (let j = i - 1; j >= 0; j--) {
+        if (!linhaEhTelefone(linhasCompletas[j])) {
+          empresa = linhasCompletas[j];
+          break;
+        }
+      }
+
+      /*
+         Procuramos o texto até o próximo telefone.
+      */
+
+      const informacoes = [];
+
+      for (let k = i + 1; k < linhasCompletas.length; k++) {
+        if (linhaEhTelefone(linhasCompletas[k])) {
+          break;
+        }
+
+        informacoes.push(linhasCompletas[k]);
+      }
+
+      const textoInformacoes = informacoes.join(" | ");
+
+      contatos.push({
+        empresa: empresa || "Empresa sem nome",
+        telefone,
+        etapa: detectarEtapa(textoInformacoes),
+        observacao: textoInformacoes,
+        fonte: "importacao"
+      });
+    }
+  }
+
+  return removerDuplicadosImportacao(contatos);
+}
+
+/* ============================================================
+   REMOVER DUPLICADOS DA LISTA IMPORTADA
+   ============================================================ */
+
+function removerDuplicadosImportacao(contatos) {
+  const mapa = new Map();
+
+  for (const contato of contatos) {
+    const telefone = normalizarTelefone(contato.telefone);
+
+    if (!telefone) continue;
+
+    if (!mapa.has(telefone)) {
+      mapa.set(telefone, contato);
+    }
+  }
+
+  return Array.from(mapa.values());
+}
+
+/* ============================================================
+   VERIFICAR DUPLICADOS NO CRM
+   ============================================================ */
+
+function telefoneJaExiste(telefone, conversas) {
+  const normalizado = normalizarTelefone(telefone);
+
+  return conversas.some(conversa => {
+    return normalizarTelefone(conversa.telefone) === normalizado;
+  });
+}
+
+/* ============================================================
+   IMPORTAR CONTATOS
+   ============================================================ */
+
+function importarContatos(contatos) {
+  const conversas = carregarConversas();
+
+  let adicionados = 0;
+  let duplicados = 0;
+
+  const agora = hoje();
+
+  contatos.forEach(contato => {
+    if (!contato.telefone) return;
+
+    if (telefoneJaExiste(contato.telefone, conversas)) {
+      duplicados++;
       return;
     }
 
-    conversation.note =
-      $('detailNote').value;
+    const novaConversa = {
+      id: gerarId(),
 
-    save();
+      empresa: contato.empresa || "Empresa sem nome",
 
-    render();
+      telefone: formatarTelefone(contato.telefone),
 
-    openConversation(
-      conversation.id
-    );
+      etapa: etapaValida(contato.etapa)
+        ? contato.etapa
+        : "Prospectado",
 
+      ultimaAtividade: agora,
+
+      observacao: contato.observacao || "",
+
+      historico: [
+        {
+          data: agora,
+          texto:
+            contato.observacao
+              ? `Contato importado. Informação: ${contato.observacao}`
+              : "Contato importado."
+        }
+      ]
+    };
+
+    conversas.push(novaConversa);
+
+    adicionados++;
+  });
+
+  salvarConversas(conversas);
+
+  return {
+    adicionados,
+    duplicados
   };
 }
 
-/* =========================================================
-   IMPORTAÇÃO DE LISTAS
-   ========================================================= */
+/* ============================================================
+   INTERFACE DO IMPORTADOR
+   ============================================================ */
 
-/*
-   A importação é criada diretamente pelo JavaScript.
-   Assim você NÃO precisa alterar o index.html.
-*/
+function criarInterfaceImportacao() {
+  /*
+     Evita criar duas vezes.
+  */
 
-function createImportInterface() {
-
-  const conversationView =
-    $('conversations');
-
-  if (!conversationView) {
+  if (document.getElementById("igImportarListaBtn")) {
     return;
   }
 
-  const head =
-    conversationView.querySelector('.head');
+  /*
+     Procurar um lugar apropriado no topo da página.
+  */
 
-  if (!head) {
-    return;
-  }
+  const botoes = Array.from(
+    document.querySelectorAll("button")
+  );
 
-  if ($('importListButton')) {
-    return;
-  }
+  let botaoRegistro = botoes.find(botao =>
+    botao.textContent
+      .toLowerCase()
+      .includes("registrar conversa")
+  );
 
-  const button =
-    document.createElement('button');
+  const botao = document.createElement("button");
 
-  button.id =
-    'importListButton';
+  botao.id = "igImportarListaBtn";
+  botao.type = "button";
+  botao.innerHTML = "⇩ Importar lista";
 
-  button.className =
-    'secondary';
+  botao.style.cssText = `
+    margin-left: 10px;
+    padding: 11px 18px;
+    border: 0;
+    border-radius: 10px;
+    background: #eef2f7;
+    color: #142033;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+  `;
 
-  button.innerHTML =
-    '⇩ Importar lista';
+  botao.addEventListener("click", abrirModalImportacao);
 
-  button.style.marginLeft =
-    '8px';
-
-  button.onclick =
-    openImportModal;
-
-  const existingButton =
-    head.querySelector('.primary');
-
-  if (existingButton) {
-
-    existingButton
-      .parentNode
-      .insertBefore(
-        button,
-        existingButton.nextSibling
-      );
-
+  if (botaoRegistro && botaoRegistro.parentElement) {
+    botaoRegistro.parentElement.appendChild(botao);
   } else {
-
-    head.appendChild(button);
-
+    document.body.appendChild(botao);
   }
 }
 
-/* =========================================================
-   MODAL DE IMPORTAÇÃO
-   ========================================================= */
+/* ============================================================
+   MODAL
+   ============================================================ */
 
-function createImportModal() {
-
-  if ($('importModal')) {
+function criarModalImportacao() {
+  if (document.getElementById("igImportModal")) {
     return;
   }
 
-  const modal =
-    document.createElement('div');
+  const modal = document.createElement("div");
 
-  modal.id =
-    'importModal';
-
-  modal.className =
-    'modal';
+  modal.id = "igImportModal";
 
   modal.innerHTML = `
+    <div id="igImportOverlay" style="
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.45);
+      z-index:9998;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    ">
 
-    <div
-      class="modalbox"
-      style="width:min(850px,100%)">
+      <div style="
+        width:min(760px, 100%);
+        max-height:90vh;
+        overflow:auto;
+        background:white;
+        border-radius:18px;
+        box-shadow:0 25px 70px rgba(0,0,0,.20);
+        padding:26px;
+      ">
 
-      <h2>
-        Importar lista de contatos
-      </h2>
-
-      <p class="muted">
-
-        Cole abaixo a lista que você recebeu.
-        O sistema tentará identificar automaticamente
-        empresa, telefone e etapa.
-
-      </p>
-
-      <div
-        class="safe"
-        style="margin-top:10px">
-
-        🔒
-        <b>Somente organização.</b>
-
-        Nenhuma mensagem será enviada
-        pelo sistema.
-
-      </div>
-
-      <textarea
-        id="importText"
-        placeholder="Cole sua lista aqui...
-
-Exemplo:
-
-Oficina ABC
-(41) 99999-1111
-WhatsApp confirmado
-
-Estética XYZ
-(41) 98888-2222
-Pediu modelo
-
-Mercado Teste
-(41) 97777-3333
-Não avançou"
-        style="
-          width:100%;
-          min-height:280px;
-          resize:vertical;
-          margin-top:10px;
-        "
-      ></textarea>
-
-      <div
-        id="importPreview"
-        style="margin-top:15px">
-      </div>
-
-      <div
-        style="
+        <div style="
           display:flex;
-          justify-content:flex-end;
-          gap:8px;
-          margin-top:15px;
+          align-items:center;
+          justify-content:space-between;
+          gap:20px;
+          margin-bottom:8px;
         ">
 
-        <button
-          type="button"
-          class="secondary"
-          id="closeImport">
+          <div>
+            <h2 style="
+              margin:0;
+              color:#111827;
+              font-size:22px;
+            ">
+              Importar lista de contatos
+            </h2>
 
-          Cancelar
+            <p style="
+              margin:7px 0 0;
+              color:#64748b;
+              font-size:14px;
+            ">
+              Cole sua lista abaixo. O sistema vai separar cada empresa,
+              telefone e etapa automaticamente.
+            </p>
+          </div>
 
-        </button>
+          <button
+            id="igFecharImportModal"
+            type="button"
+            style="
+              border:0;
+              background:#f1f5f9;
+              border-radius:9px;
+              width:38px;
+              height:38px;
+              cursor:pointer;
+              font-size:20px;
+            "
+          >
+            ×
+          </button>
 
-        <button
-          type="button"
-          class="secondary"
-          id="previewImport">
+        </div>
 
-          Analisar lista
+        <div style="
+          margin-top:20px;
+          padding:13px 15px;
+          border-radius:10px;
+          background:#f8fafc;
+          border:1px solid #e2e8f0;
+          color:#475569;
+          font-size:13px;
+          line-height:1.6;
+        ">
+          <strong>Formato recomendado:</strong><br>
 
-        </button>
+          Empresa<br>
+          Telefone<br>
+          Status ou mensagem<br><br>
 
-        <button
-          type="button"
-          class="primary"
-          id="confirmImport">
+          Empresa<br>
+          Telefone<br>
+          Status ou mensagem
 
-          Importar contatos
+          <br><br>
 
-        </button>
+          <strong>Exemplo:</strong><br>
+
+          Oficina Motor Sul<br>
+          (41) 99999-1001<br>
+          WhatsApp confirmado
+          <br><br>
+
+          Estética Bella Vida<br>
+          (41) 98888-1002<br>
+          Respondeu
+        </div>
+
+        <textarea
+          id="igImportTextarea"
+          placeholder="Cole sua lista aqui..."
+          style="
+            width:100%;
+            min-height:260px;
+            margin-top:16px;
+            padding:15px;
+            box-sizing:border-box;
+            border:1px solid #cbd5e1;
+            border-radius:12px;
+            resize:vertical;
+            font-family:inherit;
+            font-size:14px;
+            line-height:1.55;
+            outline:none;
+          "
+        ></textarea>
+
+        <div
+          id="igImportResultado"
+          style="
+            margin-top:15px;
+            display:none;
+          "
+        ></div>
+
+        <div style="
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:18px;
+          flex-wrap:wrap;
+        ">
+
+          <button
+            id="igCancelarImportacao"
+            type="button"
+            style="
+              padding:11px 17px;
+              border:1px solid #cbd5e1;
+              border-radius:9px;
+              background:white;
+              color:#334155;
+              font-weight:600;
+              cursor:pointer;
+            "
+          >
+            Cancelar
+          </button>
+
+          <button
+            id="igAnalisarImportacao"
+            type="button"
+            style="
+              padding:11px 17px;
+              border:0;
+              border-radius:9px;
+              background:#3159d9;
+              color:white;
+              font-weight:600;
+              cursor:pointer;
+            "
+          >
+            Analisar lista
+          </button>
+
+          <button
+            id="igConfirmarImportacao"
+            type="button"
+            style="
+              display:none;
+              padding:11px 17px;
+              border:0;
+              border-radius:9px;
+              background:#16a34a;
+              color:white;
+              font-weight:600;
+              cursor:pointer;
+            "
+          >
+            Importar contatos
+          </button>
+
+        </div>
 
       </div>
-
     </div>
   `;
 
   document.body.appendChild(modal);
 
-  $('closeImport').onclick =
-    closeImportModal;
+  document
+    .getElementById("igFecharImportModal")
+    .addEventListener("click", fecharModalImportacao);
 
-  $('previewImport').onclick =
-    previewImport;
+  document
+    .getElementById("igCancelarImportacao")
+    .addEventListener("click", fecharModalImportacao);
 
-  $('confirmImport').onclick =
-    confirmImport;
+  document
+    .getElementById("igAnalisarImportacao")
+    .addEventListener("click", analisarImportacaoInterface);
 
-  $('importText').addEventListener(
-    'input',
-    () => {
+  document
+    .getElementById("igConfirmarImportacao")
+    .addEventListener("click", confirmarImportacaoInterface);
 
-      $('importPreview').innerHTML = '';
+  modal.style.display = "none";
+}
 
+/* ============================================================
+   ABRIR / FECHAR MODAL
+   ============================================================ */
+
+function abrirModalImportacao() {
+  const modal = document.getElementById("igImportModal");
+
+  if (!modal) return;
+
+  modal.style.display = "block";
+
+  const textarea = document.getElementById("igImportTextarea");
+
+  const resultado = document.getElementById("igImportResultado");
+
+  const confirmar = document.getElementById(
+    "igConfirmarImportacao"
+  );
+
+  if (textarea) textarea.value = "";
+
+  if (resultado) {
+    resultado.style.display = "none";
+    resultado.innerHTML = "";
+  }
+
+  if (confirmar) {
+    confirmar.style.display = "none";
+  }
+
+  window.igContatosImportacao = [];
+
+  setTimeout(() => {
+    textarea?.focus();
+  }, 100);
+}
+
+function fecharModalImportacao() {
+  const modal = document.getElementById("igImportModal");
+
+  if (modal) {
+    modal.style.display = "none";
+  }
+
+  window.igContatosImportacao = [];
+}
+
+/* ============================================================
+   ANALISAR IMPORTAÇÃO
+   ============================================================ */
+
+function analisarImportacaoInterface() {
+  const textarea = document.getElementById(
+    "igImportTextarea"
+  );
+
+  const resultado = document.getElementById(
+    "igImportResultado"
+  );
+
+  const confirmar = document.getElementById(
+    "igConfirmarImportacao"
+  );
+
+  if (!textarea || !resultado) return;
+
+  const texto = textarea.value.trim();
+
+  if (!texto) {
+    resultado.style.display = "block";
+
+    resultado.innerHTML = `
+      <div style="
+        padding:13px;
+        border-radius:10px;
+        background:#fef2f2;
+        color:#991b1b;
+        border:1px solid #fecaca;
+      ">
+        Cole uma lista de contatos antes de analisar.
+      </div>
+    `;
+
+    if (confirmar) {
+      confirmar.style.display = "none";
     }
+
+    return;
+  }
+
+  const contatos = analisarLista(texto);
+
+  window.igContatosImportacao = contatos;
+
+  if (contatos.length === 0) {
+    resultado.style.display = "block";
+
+    resultado.innerHTML = `
+      <div style="
+        padding:13px;
+        border-radius:10px;
+        background:#fef2f2;
+        color:#991b1b;
+        border:1px solid #fecaca;
+      ">
+        Não consegui identificar contatos.
+        <br><br>
+        Verifique se sua lista possui empresa e telefone.
+      </div>
+    `;
+
+    if (confirmar) {
+      confirmar.style.display = "none";
+    }
+
+    return;
+  }
+
+  const conversas = carregarConversas();
+
+  let novos = 0;
+  let duplicados = 0;
+
+  contatos.forEach(contato => {
+    if (telefoneJaExiste(contato.telefone, conversas)) {
+      duplicados++;
+    } else {
+      novos++;
+    }
+  });
+
+  let tabela = `
+    <div style="
+      padding:14px;
+      border-radius:10px;
+      background:#f0fdf4;
+      border:1px solid #bbf7d0;
+      margin-bottom:14px;
+    ">
+      <strong style="color:#166534;">
+        ${contatos.length} contato(s) identificado(s)
+      </strong>
+
+      <div style="
+        margin-top:5px;
+        color:#475569;
+        font-size:13px;
+      ">
+        ${novos} novo(s) serão importados.
+        ${duplicados} já existem no CRM.
+      </div>
+    </div>
+
+    <div style="
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      overflow:auto;
+      max-height:300px;
+    ">
+
+      <table style="
+        width:100%;
+        border-collapse:collapse;
+        font-size:13px;
+      ">
+
+        <thead>
+          <tr style="
+            background:#f8fafc;
+            text-align:left;
+          ">
+            <th style="padding:10px;">Empresa</th>
+            <th style="padding:10px;">Telefone</th>
+            <th style="padding:10px;">Etapa</th>
+          </tr>
+        </thead>
+
+        <tbody>
+  `;
+
+  contatos.forEach(contato => {
+    const existe = telefoneJaExiste(
+      contato.telefone,
+      conversas
+    );
+
+    tabela += `
+      <tr style="
+        border-top:1px solid #e2e8f0;
+        ${existe ? "opacity:.55;" : ""}
+      ">
+
+        <td style="padding:10px;">
+          ${escaparHTML(contato.empresa)}
+        </td>
+
+        <td style="padding:10px;">
+          ${escaparHTML(contato.telefone)}
+        </td>
+
+        <td style="padding:10px;">
+          <span style="
+            display:inline-block;
+            padding:4px 8px;
+            border-radius:999px;
+            background:#eef2ff;
+            color:#3159d9;
+            font-size:11px;
+          ">
+            ${escaparHTML(contato.etapa)}
+          </span>
+        </td>
+
+      </tr>
+    `;
+  });
+
+  tabela += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  resultado.style.display = "block";
+  resultado.innerHTML = tabela;
+
+  if (confirmar) {
+    confirmar.style.display = novos > 0
+      ? "inline-block"
+      : "none";
+  }
+}
+
+/* ============================================================
+   CONFIRMAR IMPORTAÇÃO
+   ============================================================ */
+
+function confirmarImportacaoInterface() {
+  const contatos =
+    window.igContatosImportacao || [];
+
+  if (!contatos.length) {
+    return;
+  }
+
+  const resultado = importarContatos(contatos);
+
+  const resultadoElemento =
+    document.getElementById("igImportResultado");
+
+  if (resultadoElemento) {
+    resultadoElemento.style.display = "block";
+
+    resultadoElemento.innerHTML = `
+      <div style="
+        padding:15px;
+        border-radius:10px;
+        background:#f0fdf4;
+        border:1px solid #bbf7d0;
+        color:#166534;
+      ">
+
+        <strong>Importação concluída.</strong>
+
+        <div style="margin-top:7px;">
+          ${resultado.adicionados} contato(s) adicionado(s).
+        </div>
+
+        <div style="margin-top:3px;">
+          ${resultado.duplicados} contato(s) ignorado(s)
+          porque já estavam no CRM.
+        </div>
+
+      </div>
+    `;
+  }
+
+  const confirmar =
+    document.getElementById(
+      "igConfirmarImportacao"
+    );
+
+  if (confirmar) {
+    confirmar.style.display = "none";
+  }
+
+  /*
+     Atualizar a página/lista.
+  */
+
+  if (typeof window.render === "function") {
+    window.render();
+  }
+
+  /*
+     Se o projeto estiver usando uma função de atualização
+     diferente, tentamos também estas possibilidades.
+  */
+
+  if (typeof renderConversas === "function") {
+    renderConversas();
+  }
+
+  if (typeof renderDashboard === "function") {
+    renderDashboard();
+  }
+}
+
+/* ============================================================
+   RENDERIZAÇÃO DAS CONVERSAS
+   ============================================================ */
+
+function obterConversasFiltradas() {
+  const conversas = carregarConversas();
+
+  const busca =
+    document
+      .getElementById("searchInput")
+      ?.value
+      ?.toLowerCase()
+      ?.trim() || "";
+
+  const filtro =
+    document
+      .getElementById("stageFilter")
+      ?.value || "";
+
+  return conversas.filter(conversa => {
+    const correspondeBusca =
+      !busca ||
+      String(conversa.empresa)
+        .toLowerCase()
+        .includes(busca) ||
+      String(conversa.telefone)
+        .toLowerCase()
+        .includes(busca) ||
+      String(conversa.observacao || "")
+        .toLowerCase()
+        .includes(busca);
+
+    const correspondeEtapa =
+      !filtro ||
+      filtro === "Todas as etapas" ||
+      conversa.etapa === filtro;
+
+    return correspondeBusca && correspondeEtapa;
+  });
+}
+
+/* ============================================================
+   FUNÇÃO PRINCIPAL DE RENDER
+   ============================================================ */
+
+function render() {
+  /*
+     Primeiro tenta usar elementos existentes no HTML.
+  */
+
+  renderListaConversas();
+  atualizarContadores();
+  atualizarFunil();
+  atualizarAnalise();
+  atualizarAnotacoes();
+}
+
+/* ============================================================
+   RENDER LISTA
+   ============================================================ */
+
+function renderListaConversas() {
+  const conversas = obterConversasFiltradas();
+
+  /*
+     Procurar por tabelas existentes.
+  */
+
+  const tbody =
+    document.querySelector(
+      "#conversationsTable tbody"
+    ) ||
+    document.querySelector(
+      "#conversations-table tbody"
+    ) ||
+    document.querySelector(
+      "table tbody"
+    );
+
+  if (!tbody) {
+    return;
+  }
+
+  tbody.innerHTML = "";
+
+  conversas.forEach(conversa => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>
+        <strong>
+          ${escaparHTML(conversa.empresa)}
+        </strong>
+      </td>
+
+      <td>
+        ${escaparHTML(conversa.telefone)}
+      </td>
+
+      <td>
+        <span class="stage-badge">
+          ${escaparHTML(conversa.etapa)}
+        </span>
+      </td>
+
+      <td>
+        ${escaparHTML(conversa.ultimaAtividade)}
+      </td>
+
+      <td>
+        <button
+          type="button"
+          class="view-conversation-btn"
+          data-id="${conversa.id}"
+        >
+          Ver conversa
+        </button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  document
+    .querySelectorAll(".view-conversation-btn")
+    .forEach(botao => {
+      botao.addEventListener("click", () => {
+        const id = Number(botao.dataset.id);
+
+        abrirConversa(id);
+      });
+    });
+}
+
+/* ============================================================
+   ABRIR CONVERSA
+   ============================================================ */
+
+function abrirConversa(id) {
+  const conversas = carregarConversas();
+
+  const conversa = conversas.find(
+    item => Number(item.id) === Number(id)
+  );
+
+  if (!conversa) return;
+
+  /*
+     Se existir modal de conversa no projeto,
+     tenta preenchê-lo.
+  */
+
+  let modal =
+    document.getElementById(
+      "conversationModal"
+    );
+
+  if (!modal) {
+    modal = document.createElement("div");
+
+    modal.id = "conversationModal";
+
+    modal.innerHTML = `
+      <div style="
+        position:fixed;
+        inset:0;
+        background:rgba(15,23,42,.45);
+        z-index:9997;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:20px;
+      ">
+
+        <div style="
+          background:white;
+          width:min(650px,100%);
+          max-height:90vh;
+          overflow:auto;
+          border-radius:18px;
+          padding:25px;
+        ">
+
+          <div id="conversationModalContent"></div>
+
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+  }
+
+  const content = document.getElementById(
+    "conversationModalContent"
+  );
+
+  if (!content) return;
+
+  const historico = Array.isArray(conversa.historico)
+    ? conversa.historico
+    : [];
+
+  content.innerHTML = `
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:15px;
+    ">
+
+      <div>
+        <h2 style="margin:0;">
+          ${escaparHTML(conversa.empresa)}
+        </h2>
+
+        <p style="
+          margin:5px 0 0;
+          color:#64748b;
+        ">
+          ${escaparHTML(conversa.telefone)}
+        </p>
+      </div>
+
+      <button
+        id="fecharConversationModal"
+        type="button"
+        style="
+          border:0;
+          background:#f1f5f9;
+          border-radius:8px;
+          width:36px;
+          height:36px;
+          cursor:pointer;
+          font-size:20px;
+        "
+      >
+        ×
+      </button>
+
+    </div>
+
+    <div style="
+      margin-top:20px;
+      padding:14px;
+      background:#f8fafc;
+      border-radius:10px;
+    ">
+
+      <strong>Etapa:</strong>
+      ${escaparHTML(conversa.etapa)}
+
+      <br><br>
+
+      <strong>Última atividade:</strong>
+      ${escaparHTML(conversa.ultimaAtividade)}
+
+    </div>
+
+    ${
+      conversa.observacao
+        ? `
+          <div style="
+            margin-top:15px;
+            padding:14px;
+            border:1px solid #e2e8f0;
+            border-radius:10px;
+          ">
+            <strong>Observação</strong>
+
+            <p style="
+              margin:8px 0 0;
+              color:#475569;
+            ">
+              ${escaparHTML(conversa.observacao)}
+            </p>
+          </div>
+        `
+        : ""
+    }
+
+    <h3 style="margin-top:22px;">
+      Histórico
+    </h3>
+
+    <div>
+      ${
+        historico.length
+          ? historico
+              .map(item => `
+                <div style="
+                  padding:12px;
+                  border-bottom:1px solid #e2e8f0;
+                ">
+                  <div style="
+                    font-size:12px;
+                    color:#64748b;
+                  ">
+                    ${escaparHTML(item.data)}
+                  </div>
+
+                  <div style="
+                    margin-top:4px;
+                  ">
+                    ${escaparHTML(item.texto)}
+                  </div>
+                </div>
+              `)
+              .join("")
+          : `
+            <p style="color:#64748b;">
+              Nenhum histórico registrado.
+            </p>
+          `
+      }
+    </div>
+  `;
+
+  modal.style.display = "block";
+
+  document
+    .getElementById("fecharConversationModal")
+    ?.addEventListener("click", () => {
+      modal.style.display = "none";
+    });
+}
+
+/* ============================================================
+   CONTADORES
+   ============================================================ */
+
+function atualizarContadores() {
+  const conversas = carregarConversas();
+
+  const total = conversas.length;
+
+  const respondidas = conversas.filter(
+    c =>
+      c.etapa === "Respondeu" ||
+      c.etapa === "Interessado" ||
+      c.etapa === "Pediu modelo" ||
+      c.etapa === "Orçamento / negociação" ||
+      c.etapa === "Venda fechada"
+  ).length;
+
+  const interessadas = conversas.filter(
+    c =>
+      c.etapa === "Interessado" ||
+      c.etapa === "Pediu modelo" ||
+      c.etapa === "Orçamento / negociação" ||
+      c.etapa === "Venda fechada"
+  ).length;
+
+  const pedidosModelo = conversas.filter(
+    c => c.etapa === "Pediu modelo"
+  ).length;
+
+  const negociacoes = conversas.filter(
+    c => c.etapa === "Orçamento / negociação"
+  ).length;
+
+  const vendas = conversas.filter(
+    c => c.etapa === "Venda fechada"
+  ).length;
+
+  atualizarElementoTexto(
+    ["totalConversas", "total-conversas"],
+    total
+  );
+
+  atualizarElementoTexto(
+    ["respondidas", "totalRespondidas"],
+    respondidas
+  );
+
+  atualizarElementoTexto(
+    ["interessadas", "totalInteressadas"],
+    interessadas
+  );
+
+  atualizarElementoTexto(
+    ["pedidosModelo", "totalPedidosModelo"],
+    pedidosModelo
+  );
+
+  atualizarElementoTexto(
+    ["negociacoes", "totalNegociacoes"],
+    negociacoes
+  );
+
+  atualizarElementoTexto(
+    ["vendasFechadas", "totalVendas"],
+    vendas
   );
 }
 
-/* =========================================================
-   ABRIR / FECHAR IMPORTAÇÃO
-   ========================================================= */
+function atualizarElementoTexto(ids, valor) {
+  ids.forEach(id => {
+    const elemento =
+      document.getElementById(id);
 
-function openImportModal() {
-
-  createImportModal();
-
-  $('importModal')
-    .classList.add('show');
-
-  $('importText').value = '';
-
-  $('importPreview').innerHTML = '';
-
+    if (elemento) {
+      elemento.textContent = valor;
+    }
+  });
 }
 
-function closeImportModal() {
+/* ============================================================
+   FUNIL
+   ============================================================ */
 
-  if ($('importModal')) {
+function atualizarFunil() {
+  const conversas = carregarConversas();
 
-    $('importModal')
-      .classList.remove('show');
+  const contagem = {};
 
-  }
-}
-
-/* =========================================================
-   NORMALIZAÇÃO DE TELEFONE
-   ========================================================= */
-
-function normalizePhone(phone) {
-
-  return String(phone || '')
-    .replace(/\D/g, '');
-}
-
-/* =========================================================
-   IDENTIFICAR TELEFONES
-   ========================================================= */
-
-function extractPhones(text) {
-
-  const phoneRegex =
-    /(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?(?:9\s?)?\d{4}[-\s]?\d{4}/g;
-
-  return text.match(phoneRegex) || [];
-}
-
-/* =========================================================
-   IDENTIFICAR ETAPA
-   ========================================================= */
-
-function detectStage(text) {
-
-  const value =
-    String(text || '')
-      .toLowerCase();
-
-  if (
-    value.includes('venda fechada') ||
-    value.includes('fechou') ||
-    value.includes('cliente fechado') ||
-    value.includes('vendeu')
-  ) {
-
-    return 'Venda fechada';
-
-  }
-
-  if (
-    value.includes('orçamento') ||
-    value.includes('orcamento') ||
-    value.includes('negociação') ||
-    value.includes('negociacao') ||
-    value.includes('preço') ||
-    value.includes('preco') ||
-    value.includes('quanto fica') ||
-    value.includes('quanto custa')
-  ) {
-
-    return 'Orçamento / negociação';
-
-  }
-
-  if (
-    value.includes('pediu modelo') ||
-    value.includes('pediu o modelo') ||
-    value.includes('mandar modelo') ||
-    value.includes('manda modelo') ||
-    value.includes('enviar modelo') ||
-    value.includes('ver modelo') ||
-    value.includes('quer ver o site') ||
-    value.includes('quero ver o site')
-  ) {
-
-    return 'Pediu modelo';
-
-  }
-
-  if (
-    value.includes('interessado') ||
-    value.includes('tenho interesse') ||
-    value.includes('tenho interesse sim') ||
-    value.includes('gostei') ||
-    value.includes('quero fazer') ||
-    value.includes('quero sim')
-  ) {
-
-    return 'Interessado';
-
-  }
-
-  if (
-    value.includes('não avançou') ||
-    value.includes('nao avancou') ||
-    value.includes('sem interesse') ||
-    value.includes('não tenho interesse') ||
-    value.includes('nao tenho interesse')
-  ) {
-
-    return 'Não avançou';
-
-  }
-
-  if (
-    value.includes('respondeu') ||
-    value.includes('respondeu a mensagem')
-  ) {
-
-    return 'Respondeu';
-
-  }
-
-  return 'Prospectado';
-}
-
-/* =========================================================
-   LIMPAR NOME
-   ========================================================= */
-
-function cleanCompanyName(text) {
-
-  let name =
-    String(text || '').trim();
-
-  name =
-    name
-      .replace(
-        /^(nome da empresa|empresa|nome)\s*[:\-]\s*/i,
-        ''
-      );
-
-  name =
-    name
-      .replace(
-        /^(empresa|lead)\s*[:\-]\s*/i,
-        ''
-      );
-
-  return name.trim();
-
-}
-
-/* =========================================================
-   ANALISAR LISTA
-   ========================================================= */
-
-function parseImportText(text) {
-
-  const lines =
-    String(text || '')
-      .split(/\r?\n/)
-      .map(line => line.trim())
-      .filter(Boolean);
-
-  const results = [];
-
-  let currentCompany = '';
-  let currentPhone = '';
-  let currentExtra = [];
-
-  function finishCurrent() {
-
-    if (!currentPhone) {
-      return;
-    }
-
-    const stage =
-      detectStage(
-        [
-          currentCompany,
-          ...currentExtra
-        ].join(' ')
-      );
-
-    results.push({
-
-      company:
-        currentCompany ||
-        'Empresa sem nome',
-
-      phone:
-        currentPhone,
-
-      stage,
-
-      extra:
-        currentExtra.join(' ')
-
-    });
-
-  }
-
-  for (const line of lines) {
-
-    const phones =
-      extractPhones(line);
-
-    if (phones.length) {
-
-      /*
-         Quando encontramos um telefone,
-         entendemos que começa/termina
-         um contato.
-      */
-
-      if (currentPhone) {
-        finishCurrent();
-      }
-
-      currentPhone =
-        phones[0];
-
-      const beforePhone =
-        line
-          .replace(
-            phones[0],
-            ''
-          )
-          .trim()
-          .replace(
-            /^[|:\-–—]+|[|:\-–—]+$/g,
-            ''
-          )
-          .trim();
-
-      if (beforePhone) {
-
-        if (!currentCompany) {
-
-          currentCompany =
-            cleanCompanyName(
-              beforePhone
-            );
-
-        } else {
-
-          currentExtra.push(
-            beforePhone
-          );
-
-        }
-
-      }
-
-      continue;
-    }
-
-    /*
-       Ignora linhas que são apenas
-       separadores/status genéricos.
-    */
-
-    const normalized =
-      line.toLowerCase();
-
-    const genericStatus =
-      [
-        'whatsapp confirmado',
-        'whatsapp não confirmado',
-        'whatsapp nao confirmado',
-        'vale tentar',
-        'status',
-        'telefone',
-        'número',
-        'numero',
-        'mensagem para copiar'
-      ];
-
-    if (
-      genericStatus.some(
-        item =>
-          normalized.includes(item)
-      )
-    ) {
-
-      currentExtra.push(line);
-
-      continue;
-    }
-
-    /*
-       Se ainda não temos empresa,
-       esta linha provavelmente é o nome.
-    */
-
-    if (!currentCompany) {
-
-      currentCompany =
-        cleanCompanyName(line);
-
-    } else {
-
-      currentExtra.push(line);
-
-    }
-  }
-
-  finishCurrent();
-
-  /*
-     Remove duplicados dentro da
-     própria lista.
-  */
-
-  const unique = [];
-  const seen = new Set();
-
-  for (const item of results) {
-
-    const normalized =
-      normalizePhone(item.phone);
-
-    if (!normalized) {
-      continue;
-    }
-
-    if (seen.has(normalized)) {
-      continue;
-    }
-
-    seen.add(normalized);
-
-    unique.push({
-
-      ...item,
-
-      phone:
-        item.phone.trim()
-
-    });
-  }
-
-  return unique;
-}
-
-/* =========================================================
-   PRÉ-VISUALIZAÇÃO
-   ========================================================= */
-
-function previewImport() {
-
-  const text =
-    $('importText').value;
-
-  if (!text.trim()) {
-
-    $('importPreview').innerHTML = `
-      <div class="safe">
-        Cole uma lista antes de analisar.
-      </div>
-    `;
-
-    return;
-  }
-
-  const parsed =
-    parseImportText(text);
-
-  if (!parsed.length) {
-
-    $('importPreview').innerHTML = `
-      <div class="safe">
-        Não consegui identificar telefones
-        nessa lista.
-      </div>
-    `;
-
-    return;
-  }
-
-  const existingPhones =
-    new Set(
-      conversations.map(
-        c =>
-          normalizePhone(c.phone)
-      )
-    );
-
-  let newCount = 0;
-  let duplicateCount = 0;
-
-  parsed.forEach(item => {
-
-    if (
-      existingPhones.has(
-        normalizePhone(item.phone)
-      )
-    ) {
-
-      duplicateCount++;
-
-    } else {
-
-      newCount++;
-
-    }
-
+  ETAPAS.forEach(etapa => {
+    contagem[etapa] = 0;
   });
 
-  $('importPreview').innerHTML = `
+  conversas.forEach(conversa => {
+    if (contagem[conversa.etapa] !== undefined) {
+      contagem[conversa.etapa]++;
+    }
+  });
 
-    <div class="card">
+  ETAPAS.forEach(etapa => {
+    const id = etapa
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .toLowerCase();
 
-      <h3>
-        Resultado da análise
-      </h3>
+    atualizarElementoTexto(
+      [
+        `funil-${id}`,
+        `funnel-${id}`,
+        `stage-${id}`
+      ],
+      contagem[etapa]
+    );
+  });
+}
 
-      <p>
-        <b>${parsed.length}</b>
-        contatos identificados.
+/* ============================================================
+   ANÁLISE
+   ============================================================ */
+
+function atualizarAnalise() {
+  const conversas = carregarConversas();
+
+  const total = conversas.length;
+
+  if (total === 0) return;
+
+  const respondidas = conversas.filter(
+    c =>
+      c.etapa !== "Prospectado"
+  ).length;
+
+  const interessadas = conversas.filter(
+    c =>
+      c.etapa === "Interessado" ||
+      c.etapa === "Pediu modelo" ||
+      c.etapa === "Orçamento / negociação" ||
+      c.etapa === "Venda fechada"
+  ).length;
+
+  const pedidosModelo = conversas.filter(
+    c => c.etapa === "Pediu modelo"
+  ).length;
+
+  const vendas = conversas.filter(
+    c => c.etapa === "Venda fechada"
+  ).length;
+
+  const taxaResposta =
+    (respondidas / total) * 100;
+
+  const taxaInteresse =
+    (interessadas / total) * 100;
+
+  const taxaModelo =
+    (pedidosModelo / total) * 100;
+
+  const taxaVenda =
+    (vendas / total) * 100;
+
+  atualizarElementoTexto(
+    ["taxaResposta"],
+    `${taxaResposta.toFixed(1)}%`
+  );
+
+  atualizarElementoTexto(
+    ["taxaInteresse"],
+    `${taxaInteresse.toFixed(1)}%`
+  );
+
+  atualizarElementoTexto(
+    ["taxaModelo"],
+    `${taxaModelo.toFixed(1)}%`
+  );
+
+  atualizarElementoTexto(
+    ["taxaVenda"],
+    `${taxaVenda.toFixed(1)}%`
+  );
+}
+
+/* ============================================================
+   ANOTAÇÕES
+   ============================================================ */
+
+function atualizarAnotacoes() {
+  const anotacoes = carregarAnotacoes();
+
+  const container =
+    document.getElementById(
+      "anotacoesLista"
+    );
+
+  if (!container) return;
+
+  if (!anotacoes.length) {
+    container.innerHTML = `
+      <p style="color:#64748b;">
+        Nenhuma anotação registrada.
       </p>
+    `;
 
-      <p>
-        <b>${newCount}</b>
-        novos contatos.
-      </p>
+    return;
+  }
 
-      <p>
-        <b>${duplicateCount}</b>
-        contatos já existentes.
-      </p>
+  container.innerHTML = anotacoes
+    .map(anotacao => `
+      <div style="
+        padding:13px;
+        border-bottom:1px solid #e2e8f0;
+      ">
 
-      <div
-        style="
-          max-height:250px;
-          overflow:auto;
-          margin-top:12px;
+        <div style="
+          font-size:12px;
+          color:#64748b;
         ">
+          ${escaparHTML(anotacao.data)}
+        </div>
 
-        <table>
-
-          <thead>
-            <tr>
-              <th>Empresa</th>
-              <th>Telefone</th>
-              <th>Etapa</th>
-            </tr>
-          </thead>
-
-          <tbody>
-
-            ${parsed
-              .slice(0, 100)
-              .map(item => `
-
-                <tr>
-
-                  <td>
-                    ${esc(item.company)}
-                  </td>
-
-                  <td>
-                    ${esc(item.phone)}
-                  </td>
-
-                  <td>
-                    <span class="pill">
-                      ${esc(item.stage)}
-                    </span>
-                  </td>
-
-                </tr>
-
-              `)
-              .join('')}
-
-          </tbody>
-
-        </table>
+        <div style="
+          margin-top:5px;
+        ">
+          ${escaparHTML(anotacao.texto)}
+        </div>
 
       </div>
+    `)
+    .join("");
+}
 
-      ${
-        parsed.length > 100
-          ? `
-            <p class="muted">
-              Mostrando os primeiros 100
-              contatos na prévia.
-            </p>
-          `
-          : ''
-      }
+/* ============================================================
+   FILTROS
+   ============================================================ */
 
-    </div>
+function configurarFiltros() {
+  const searchInput =
+    document.getElementById("searchInput");
+
+  const stageFilter =
+    document.getElementById("stageFilter");
+
+  searchInput?.addEventListener(
+    "input",
+    render
+  );
+
+  stageFilter?.addEventListener(
+    "change",
+    render
+  );
+}
+
+/* ============================================================
+   CRIAR FILTRO DE ETAPAS SE NECESSÁRIO
+   ============================================================ */
+
+function configurarFiltroEtapas() {
+  const select =
+    document.getElementById("stageFilter");
+
+  if (!select) return;
+
+  /*
+     Se já possui opções suficientes, não substituímos.
+  */
+
+  if (select.options.length > 1) {
+    return;
+  }
+
+  select.innerHTML = `
+    <option value="">
+      Todas as etapas
+    </option>
+
+    ${ETAPAS.map(etapa => `
+      <option value="${escaparHTML(etapa)}">
+        ${escaparHTML(etapa)}
+      </option>
+    `).join("")}
   `;
 }
 
-/* =========================================================
-   CONFIRMAR IMPORTAÇÃO
-   ========================================================= */
+/* ============================================================
+   ADICIONAR CONVERSA MANUALMENTE
+   ============================================================ */
 
-function confirmImport() {
+function adicionarConversaManual(
+  empresa,
+  telefone,
+  etapa = "Prospectado",
+  observacao = ""
+) {
+  const conversas = carregarConversas();
 
-  const text =
-    $('importText').value;
-
-  if (!text.trim()) {
-
+  if (telefoneJaExiste(telefone, conversas)) {
     alert(
-      'Cole uma lista antes de importar.'
+      "Este telefone já está cadastrado no CRM."
     );
 
-    return;
+    return false;
   }
 
-  const parsed =
-    parseImportText(text);
+  const novaConversa = {
+    id: gerarId(),
 
-  if (!parsed.length) {
+    empresa: empresa.trim(),
 
-    alert(
-      'Nenhum contato com telefone foi identificado.'
-    );
+    telefone: formatarTelefone(telefone),
 
-    return;
-  }
+    etapa: etapaValida(etapa)
+      ? etapa
+      : "Prospectado",
 
-  /*
-     Telefones que já existem no CRM.
-  */
+    ultimaAtividade: hoje(),
 
-  const existingPhones =
-    new Set(
-      conversations.map(
-        c =>
-          normalizePhone(c.phone)
-      )
-    );
+    observacao: observacao.trim(),
 
-  let imported = 0;
-  let duplicated = 0;
+    historico: [
+      {
+        data: hoje(),
+        texto: "Conversa registrada manualmente."
+      }
+    ]
+  };
 
-  for (const item of parsed) {
+  conversas.push(novaConversa);
 
-    const normalizedPhone =
-      normalizePhone(item.phone);
-
-    if (!normalizedPhone) {
-      continue;
-    }
-
-    /*
-       Não duplica.
-    */
-
-    if (
-      existingPhones.has(
-        normalizedPhone
-      )
-    ) {
-
-      duplicated++;
-
-      continue;
-    }
-
-    /*
-       Cria novo contato.
-    */
-
-    conversations.push({
-
-      id:
-        Date.now() +
-        Math.floor(
-          Math.random() * 100000
-        ),
-
-      company:
-        item.company,
-
-      phone:
-        item.phone,
-
-      stage:
-        item.stage,
-
-      firstReply:
-        0,
-
-      updated:
-        new Date()
-          .toISOString()
-          .slice(0, 10),
-
-      note:
-        item.extra ||
-        'Importado por lista.',
-
-      history: []
-
-    });
-
-    existingPhones.add(
-      normalizedPhone
-    );
-
-    imported++;
-  }
-
-  save();
+  salvarConversas(conversas);
 
   render();
 
-  closeImportModal();
+  return true;
+}
 
-  show('conversations');
+/* ============================================================
+   ATUALIZAR ETAPA
+   ============================================================ */
+
+function atualizarEtapa(id, novaEtapa) {
+  const conversas = carregarConversas();
+
+  const conversa = conversas.find(
+    item => Number(item.id) === Number(id)
+  );
+
+  if (!conversa) return;
+
+  if (!etapaValida(novaEtapa)) {
+    return;
+  }
+
+  conversa.etapa = novaEtapa;
+
+  conversa.ultimaAtividade = hoje();
+
+  if (!Array.isArray(conversa.historico)) {
+    conversa.historico = [];
+  }
+
+  conversa.historico.push({
+    data: hoje(),
+    texto: `Etapa alterada para "${novaEtapa}".`
+  });
+
+  salvarConversas(conversas);
+
+  render();
+}
+
+/* ============================================================
+   ADICIONAR HISTÓRICO
+   ============================================================ */
+
+function adicionarHistorico(
+  id,
+  texto
+) {
+  const conversas = carregarConversas();
+
+  const conversa = conversas.find(
+    item => Number(item.id) === Number(id)
+  );
+
+  if (!conversa) return;
+
+  if (!Array.isArray(conversa.historico)) {
+    conversa.historico = [];
+  }
+
+  conversa.historico.push({
+    data: hoje(),
+    texto: String(texto || "").trim()
+  });
+
+  conversa.ultimaAtividade = hoje();
+
+  salvarConversas(conversas);
+
+  render();
+}
+
+/* ============================================================
+   EXPORTAR DADOS
+   ============================================================ */
+
+function exportarConversas() {
+  const conversas = carregarConversas();
+
+  const arquivo = new Blob(
+    [
+      JSON.stringify(
+        conversas,
+        null,
+        2
+      )
+    ],
+    {
+      type: "application/json"
+    }
+  );
+
+  const url =
+    URL.createObjectURL(arquivo);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+
+  link.download =
+    `ig-sites-conversas-${hoje()}.json`;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   RESETAR DADOS DE DEMONSTRAÇÃO
+   ============================================================ */
+
+function restaurarDadosDemo() {
+  const confirmar = window.confirm(
+    "Isso substituirá os contatos atuais pelos dados de demonstração. Deseja continuar?"
+  );
+
+  if (!confirmar) return;
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(dadosIniciais)
+  );
+
+  render();
 
   alert(
-    `Importação concluída!\n\n` +
-    `Novos contatos: ${imported}\n` +
-    `Duplicados ignorados: ${duplicated}`
+    "Dados de demonstração restaurados."
   );
 }
 
-/* =========================================================
+/* ============================================================
+   CORREÇÃO DOS BADGES
+   ============================================================ */
+
+function aplicarEstiloEtapas() {
+  const estilo = document.createElement("style");
+
+  estilo.id = "igSitesStageStyles";
+
+  estilo.textContent = `
+    .stage-badge {
+      display:inline-flex;
+      align-items:center;
+      padding:5px 9px;
+      border-radius:999px;
+      background:#eef3ff;
+      color:#3159d9;
+      font-size:11px;
+      font-weight:500;
+      white-space:nowrap;
+    }
+
+    #igImportTextarea:focus {
+      border-color:#3159d9 !important;
+      box-shadow:0 0 0 3px rgba(49,89,217,.10);
+    }
+
+    #igImportModal button:hover {
+      filter:brightness(.97);
+    }
+  `;
+
+  document.head.appendChild(estilo);
+}
+
+/* ============================================================
    INICIALIZAÇÃO
-   ========================================================= */
+   ============================================================ */
 
-createImportInterface();
+function inicializarIGSitesCRM() {
+  /*
+     Garante que o storage exista.
+  */
 
-createImportModal();
+  carregarConversas();
 
-render();
+  /*
+     Interface de importação.
+  */
+
+  criarInterfaceImportacao();
+
+  criarModalImportacao();
+
+  aplicarEstiloEtapas();
+
+  configurarFiltros();
+
+  configurarFiltroEtapas();
+
+  render();
+
+  console.log(
+    "IG Sites Gestão de Conversas iniciado."
+  );
+
+  console.log(
+    "Importador corrigido: cada telefone recebe sua própria empresa."
+  );
+}
+
+/* ============================================================
+   DISPONIBILIZAR FUNÇÕES GLOBALMENTE
+   ============================================================ */
+
+window.render = render;
+
+window.abrirModalImportacao =
+  abrirModalImportacao;
+
+window.fecharModalImportacao =
+  fecharModalImportacao;
+
+window.analisarLista =
+  analisarLista;
+
+window.importarContatos =
+  importarContatos;
+
+window.adicionarConversaManual =
+  adicionarConversaManual;
+
+window.atualizarEtapa =
+  atualizarEtapa;
+
+window.adicionarHistorico =
+  adicionarHistorico;
+
+window.exportarConversas =
+  exportarConversas;
+
+window.restaurarDadosDemo =
+  restaurarDadosDemo;
+
+window.detectarEtapa =
+  detectarEtapa;
+
+/* ============================================================
+   START
+   ============================================================ */
+
+if (
+  document.readyState === "loading"
+) {
+  document.addEventListener(
+    "DOMContentLoaded",
+    inicializarIGSitesCRM
+  );
+} else {
+  inicializarIGSitesCRM();
+}
