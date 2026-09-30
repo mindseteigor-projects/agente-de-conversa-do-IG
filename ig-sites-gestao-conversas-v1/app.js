@@ -1,29 +1,20 @@
 /* ============================================================
-   IG SITES — GESTÃO COMERCIAL
-   app.js COMPLETO
-   ============================================================
+   IG SITES — GESTÃO DE CONVERSAS
+   app.js COMPLETO — VERSÃO CORRIGIDA
 
-   - CRM somente para organização e análise
+   - Menu lateral funciona com o HTML atual (data-view)
+   - Troca de telas sem recarregar a página
+   - Importação com ou sem linhas em branco
+   - Aceita empresa + telefone + etapa na mesma linha
+   - Aceita empresa / telefone / etapa em linhas separadas
+   - Evita duplicados por telefone
+   - Mantém dados no localStorage
    - NÃO conecta ao WhatsApp
    - NÃO envia mensagens
-   - Importação funciona COM ou SEM linhas em branco
-   - Detecta empresa, telefone e etapa
-   - Evita contatos duplicados
-   - Mantém dados no localStorage
-   ============================================================ */
-
-
-/* ============================================================
-   CONFIGURAÇÕES
    ============================================================ */
 
 const STORAGE_KEY = "ig_sites_conversas";
 const NOTES_KEY = "ig_sites_anotacoes";
-
-
-/* ============================================================
-   ETAPAS DO FUNIL
-   ============================================================ */
 
 const ETAPAS = [
   "Prospectado",
@@ -35,185 +26,321 @@ const ETAPAS = [
   "Não avançou"
 ];
 
-
-/* ============================================================
-   DADOS INICIAIS
-   ============================================================ */
+const TITULOS = {
+  dashboard: "Visão geral",
+  conversations: "Conversas",
+  funnel: "Funil",
+  analysis: "Análise",
+  notes: "Anotações",
+  settings: "Configurações"
+};
 
 const dadosIniciais = [
   {
     id: 1,
-    empresa: "Oficina Exemplo",
-    telefone: "(41) 99999-1111",
-    etapa: "Interessado",
-    ultimaAtividade: "2026-09-25",
-    observacao: "Demonstrou interesse no site.",
-    historico: [
+    company: "Oficina Exemplo",
+    phone: "(41) 99999-1111",
+    stage: "Interessado",
+    firstReply: 18,
+    updated: "2026-09-25",
+    note: "Demonstrou interesse no site.",
+    history: [
       {
-        data: "2026-09-25",
-        texto: "Cliente demonstrou interesse."
+        from: "ig",
+        text: "Olá! Tudo bem? Falo com o responsável pela Oficina Exemplo?",
+        time: "09:10"
+      },
+      {
+        from: "client",
+        text: "Olá, sim. Pode falar.",
+        time: "09:28"
+      },
+      {
+        from: "client",
+        text: "Tenho interesse. Como seria?",
+        time: "09:36"
       }
     ]
   },
   {
     id: 2,
-    empresa: "Estética Modelo",
-    telefone: "(41) 98888-2222",
-    etapa: "Pediu modelo",
-    ultimaAtividade: "2026-09-24",
-    observacao: "Pediu para ver um modelo.",
-    historico: [
+    company: "Estética Modelo",
+    phone: "(41) 98888-2222",
+    stage: "Pediu modelo",
+    firstReply: 7,
+    updated: "2026-09-24",
+    note: "Pediu para ver um exemplo de site.",
+    history: [
       {
-        data: "2026-09-24",
-        texto: "Pediu modelo do site."
+        from: "ig",
+        text: "Olá! Tudo bem? Falo com o responsável pela Estética Modelo?",
+        time: "14:02"
+      },
+      {
+        from: "client",
+        text: "Sim, sou eu.",
+        time: "14:09"
+      },
+      {
+        from: "client",
+        text: "Pode me mandar um modelo?",
+        time: "14:12"
       }
     ]
   },
   {
     id: 3,
-    empresa: "Mercado Fictício",
-    telefone: "(41) 97777-3333",
-    etapa: "Respondeu",
-    ultimaAtividade: "2026-09-23",
-    observacao: "Respondeu à abordagem.",
-    historico: [
+    company: "Mercado Fictício",
+    phone: "(41) 97777-3333",
+    stage: "Respondeu",
+    firstReply: 42,
+    updated: "2026-09-23",
+    note: "Respondeu à abordagem.",
+    history: [
       {
-        data: "2026-09-23",
-        texto: "Respondeu à mensagem inicial."
+        from: "ig",
+        text: "Olá! Tudo bem? Falo com o responsável pelo Mercado Fictício?",
+        time: "11:15"
+      },
+      {
+        from: "client",
+        text: "Sim.",
+        time: "11:57"
       }
     ]
   },
   {
     id: 4,
-    empresa: "Studio Demonstração",
-    telefone: "(41) 96666-4444",
-    etapa: "Orçamento / negociação",
-    ultimaAtividade: "2026-09-22",
-    observacao: "Entrou em conversa sobre preço.",
-    historico: [
+    company: "Studio Demonstração",
+    phone: "(41) 96666-4444",
+    stage: "Orçamento / negociação",
+    firstReply: 12,
+    updated: "2026-09-22",
+    note: "Entrou em conversa sobre preço.",
+    history: [
       {
-        data: "2026-09-22",
-        texto: "Conversa sobre orçamento."
+        from: "client",
+        text: "Quanto fica para fazer um site?",
+        time: "10:34"
       }
     ]
   },
   {
     id: 5,
-    empresa: "Café Ilustrativo",
-    telefone: "(41) 95555-5555",
-    etapa: "Não avançou",
-    ultimaAtividade: "2026-09-20",
-    observacao: "Não demonstrou interesse.",
-    historico: [
+    company: "Café Ilustrativo",
+    phone: "(41) 95555-5555",
+    stage: "Não avançou",
+    firstReply: 0,
+    updated: "2026-09-20",
+    note: "Não avançou.",
+    history: [
       {
-        data: "2026-09-20",
-        texto: "Não avançou."
+        from: "ig",
+        text: "Olá! Tudo bem? Falo com o responsável pelo Café Ilustrativo?",
+        time: "16:05"
       }
     ]
   },
   {
     id: 6,
-    empresa: "Auto Demo",
-    telefone: "(41) 94444-6666",
-    etapa: "Venda fechada",
-    ultimaAtividade: "2026-09-19",
-    observacao: "Venda fechada.",
-    historico: [
+    company: "Auto Demo",
+    phone: "(41) 94444-6666",
+    stage: "Venda fechada",
+    firstReply: 5,
+    updated: "2026-09-19",
+    note: "Venda fechada.",
+    history: [
       {
-        data: "2026-09-19",
-        texto: "Venda fechada."
+        from: "client",
+        text: "Gostei da ideia e quero seguir.",
+        time: "08:52"
       }
     ]
   }
 ];
 
+let selectedId = null;
+let importadosTemporarios = [];
 
-/* ============================================================
-   UTILITÁRIOS
-   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function escaparHTML(valor) {
+  return String(valor ?? "").replace(/[&<>"']/g, caractere => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[caractere]));
+}
+
+function hoje() {
+  const d = new Date();
+
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function gerarId() {
   return Date.now() + Math.floor(Math.random() * 100000);
 }
 
-
-function hoje() {
-  const agora = new Date();
-
-  const ano = agora.getFullYear();
-  const mes = String(agora.getMonth() + 1).padStart(2, "0");
-  const dia = String(agora.getDate()).padStart(2, "0");
-
-  return `${ano}-${mes}-${dia}`;
+function normalizarTexto(valor) {
+  return String(valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
+function normalizarTelefone(valor) {
+  let numero = String(valor ?? "").replace(/\D/g, "");
 
-function normalizarTelefone(telefone) {
-  let numero = String(telefone || "")
-    .replace(/\D/g, "");
-
-  if (numero.startsWith("55") && numero.length > 11) {
-    numero = numero.substring(2);
+  if (
+    numero.startsWith("55") &&
+    (numero.length === 12 || numero.length === 13)
+  ) {
+    numero = numero.slice(2);
   }
 
   return numero;
 }
 
-
-function formatarTelefone(telefone) {
-  let numero = String(telefone || "")
-    .replace(/\D/g, "");
-
-  if (numero.startsWith("55") && numero.length > 11) {
-    numero = numero.substring(2);
-  }
+function formatarTelefone(valor) {
+  let numero = normalizarTelefone(valor);
 
   if (numero.length === 11) {
-    return `(${numero.substring(0, 2)}) ${numero.substring(2, 7)}-${numero.substring(7)}`;
+    return `(${numero.slice(0, 2)}) ${numero.slice(2, 7)}-${numero.slice(7)}`;
   }
 
   if (numero.length === 10) {
-    return `(${numero.substring(0, 2)}) ${numero.substring(2, 6)}-${numero.substring(6)}`;
+    return `(${numero.slice(0, 2)}) ${numero.slice(2, 6)}-${numero.slice(6)}`;
   }
 
-  return telefone;
+  return String(valor ?? "").trim();
 }
 
-
-function escaparHTML(texto) {
-  return String(texto || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+function etapaValida(etapa) {
+  return ETAPAS.includes(etapa);
 }
-
 
 /* ============================================================
-   STORAGE
+   DETECÇÃO DE ETAPAS
+   ============================================================ */
+
+function detectarEtapa(texto) {
+  const t = normalizarTexto(texto);
+
+  if (
+    /venda\s+fechada/.test(t) ||
+    /fechou/.test(t) ||
+    /cliente\s+fechado/.test(t) ||
+    /venda\s+realizada/.test(t) ||
+    /fechamento/.test(t)
+  ) {
+    return "Venda fechada";
+  }
+
+  if (
+    /nao\s+tenho\s+interesse/.test(t) ||
+    /sem\s+interesse/.test(t) ||
+    /nao\s+quero/.test(t) ||
+    /nao\s+avancou/.test(t) ||
+    /desistiu/.test(t)
+  ) {
+    return "Não avançou";
+  }
+
+  if (
+    /orcamento/.test(t) ||
+    /negociacao/.test(t) ||
+    /quanto\s+custa/.test(t) ||
+    /quanto\s+fica/.test(t) ||
+    /qual\s+o\s+preco/.test(t) ||
+    /preco/.test(t) ||
+    /valor\s+do\s+site/.test(t) ||
+    /quanto\s+e/.test(t)
+  ) {
+    return "Orçamento / negociação";
+  }
+
+  if (
+    /pediu\s+modelo/.test(t) ||
+    /pedir\s+modelo/.test(t) ||
+    /manda\s+(o\s+)?modelo/.test(t) ||
+    /mandar\s+(o\s+)?modelo/.test(t) ||
+    /mande\s+(o\s+)?modelo/.test(t) ||
+    /enviar\s+(o\s+)?modelo/.test(t) ||
+    /envia\s+(o\s+)?modelo/.test(t) ||
+    /quero\s+ver\s+(o\s+)?modelo/.test(t) ||
+    /ver\s+(o\s+)?modelo/.test(t) ||
+    /modelo\s+do\s+site/.test(t)
+  ) {
+    return "Pediu modelo";
+  }
+
+  if (
+    /tenho\s+interesse/.test(t) ||
+    /interessado/.test(t) ||
+    /interessou/.test(t) ||
+    /gostei/.test(t) ||
+    /quero\s+fazer/.test(t) ||
+    /quero\s+sim/.test(t) ||
+    /vamos\s+fazer/.test(t) ||
+    /pode\s+fazer/.test(t)
+  ) {
+    return "Interessado";
+  }
+
+  if (
+    /^respondeu$/.test(t) ||
+    /respondeu/.test(t) ||
+    /resposta/.test(t)
+  ) {
+    return "Respondeu";
+  }
+
+  return "Prospectado";
+}
+
+/* ============================================================
+   DETECÇÃO DE TELEFONE
+   ============================================================ */
+
+function detectarTelefone(texto) {
+  const regex =
+    /(?:\+?55[\s.-]*)?\(?\d{2}\)?[\s.-]*9?\d{4}[\s.-]*\d{4}/;
+
+  const encontrado = String(texto ?? "").match(regex);
+
+  return encontrado ? encontrado[0] : null;
+}
+
+function linhaTemTelefone(linha) {
+  return !!detectarTelefone(linha);
+}
+
+/* ============================================================
+   LOCAL STORAGE
    ============================================================ */
 
 function carregarConversas() {
   try {
-    const dados = localStorage.getItem(STORAGE_KEY);
+    const salvo = localStorage.getItem(STORAGE_KEY);
 
-    if (!dados) {
+    if (!salvo) {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify(dadosIniciais)
       );
 
-      return [...dadosIniciais];
+      return normalizarConversas(dadosIniciais);
     }
 
-    const conversas = JSON.parse(dados);
+    const dados = JSON.parse(salvo);
 
-    if (!Array.isArray(conversas)) {
-      return [];
-    }
-
-    return conversas;
+    return Array.isArray(dados)
+      ? normalizarConversas(dados)
+      : [];
 
   } catch (erro) {
     console.error("Erro ao carregar conversas:", erro);
@@ -221,628 +348,384 @@ function carregarConversas() {
   }
 }
 
+function normalizarConversas(lista) {
+  return lista.map((c, indice) => ({
+    id: c.id ?? gerarId() + indice,
 
-function salvarConversas(conversas) {
+    company:
+      c.company ??
+      c.empresa ??
+      "Empresa sem nome",
+
+    phone:
+      formatarTelefone(
+        c.phone ??
+        c.telefone ??
+        ""
+      ),
+
+    stage:
+      etapaValida(c.stage ?? c.etapa)
+        ? (c.stage ?? c.etapa)
+        : "Prospectado",
+
+    firstReply:
+      Number(
+        c.firstReply ??
+        c.tempoPrimeiraResposta ??
+        0
+      ),
+
+    updated:
+      c.updated ??
+      c.ultimaAtividade ??
+      hoje(),
+
+    note:
+      c.note ??
+      c.observacao ??
+      "",
+
+    history:
+      Array.isArray(c.history)
+        ? c.history
+        : Array.isArray(c.historico)
+          ? c.historico.map(h => ({
+              from: h.from ?? "client",
+              text: h.text ?? h.texto ?? "",
+              time: h.time ?? h.data ?? ""
+            }))
+          : []
+  }));
+}
+
+function salvarConversas(lista) {
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify(conversas)
+    JSON.stringify(lista)
   );
 }
 
-
 function carregarAnotacoes() {
   try {
-    const dados = localStorage.getItem(NOTES_KEY);
+    const dados = JSON.parse(
+      localStorage.getItem(NOTES_KEY) || "[]"
+    );
 
-    if (!dados) {
-      return [];
-    }
-
-    const anotacoes = JSON.parse(dados);
-
-    return Array.isArray(anotacoes)
-      ? anotacoes
+    return Array.isArray(dados)
+      ? dados
       : [];
 
-  } catch (erro) {
-    console.error("Erro ao carregar anotações:", erro);
+  } catch {
     return [];
   }
 }
 
-
-function salvarAnotacoes(anotacoes) {
+function salvarAnotacoes(lista) {
   localStorage.setItem(
     NOTES_KEY,
-    JSON.stringify(anotacoes)
+    JSON.stringify(lista)
   );
 }
 
-
-/* ============================================================
-   ETAPAS
-   ============================================================ */
-
-function etapaValida(etapa) {
-  return ETAPAS.includes(etapa);
+function getConversas() {
+  return carregarConversas();
 }
 
+function contarEtapa(etapa) {
+  return getConversas()
+    .filter(c => c.stage === etapa)
+    .length;
+}
+
+function telefoneJaExiste(telefone, conversas) {
+  const numero = normalizarTelefone(telefone);
+
+  if (!numero) {
+    return false;
+  }
+
+  return conversas.some(
+    c =>
+      normalizarTelefone(c.phone) === numero
+  );
+}
 
 /* ============================================================
-   NORMALIZAÇÃO DE TEXTO
+   IMPORTAÇÃO
    ============================================================ */
 
-function normalizarTexto(texto) {
-  return String(texto || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
+function limparEmpresa(valor) {
+  return String(valor ?? "")
+    .replace(/^[-•*]+\s*/, "")
+    .replace(
+      /^(empresa|nome|negocio|negócio)\s*:\s*/i,
+      ""
+    )
     .trim();
 }
 
+function textoDepoisDoTelefone(linha, telefone) {
+  const pos = String(linha).indexOf(telefone);
 
-/* ============================================================
-   DETECTAR ETAPA
-   ============================================================ */
-
-function detectarEtapa(texto) {
-  const t = normalizarTexto(texto);
-
-  /*
-     VENDA FECHADA
-  */
-
-  if (
-    t.includes("venda fechada") ||
-    t.includes("venda realizada") ||
-    t.includes("cliente fechado") ||
-    t.includes("fechou") ||
-    t.includes("fechamento") ||
-    t === "venda"
-  ) {
-    return "Venda fechada";
+  if (pos < 0) {
+    return "";
   }
 
-
-  /*
-     NÃO AVANÇOU
-  */
-
-  if (
-    t.includes("nao tenho interesse") ||
-    t.includes("sem interesse") ||
-    t.includes("nao quero") ||
-    t.includes("nao tenho interesse") ||
-    t.includes("não tenho interesse") ||
-    t.includes("não quero") ||
-    t.includes("nao avancou") ||
-    t.includes("não avançou") ||
-    t.includes("desistiu")
-  ) {
-    return "Não avançou";
-  }
-
-
-  /*
-     ORÇAMENTO / NEGOCIAÇÃO
-  */
-
-  if (
-    t.includes("orcamento") ||
-    t.includes("orçamento") ||
-    t.includes("negociacao") ||
-    t.includes("negociação") ||
-    t.includes("quanto custa") ||
-    t.includes("quanto fica") ||
-    t.includes("qual o preco") ||
-    t.includes("qual o preço") ||
-    t.includes("preco") ||
-    t.includes("preço") ||
-    t.includes("valor do site") ||
-    t.includes("valor")
-  ) {
-    return "Orçamento / negociação";
-  }
-
-
-  /*
-     PEDIU MODELO
-  */
-
-  if (
-    t.includes("pediu modelo") ||
-    t.includes("pedir modelo") ||
-    t.includes("manda o modelo") ||
-    t.includes("mandar modelo") ||
-    t.includes("mande o modelo") ||
-    t.includes("enviar modelo") ||
-    t.includes("envia o modelo") ||
-    t.includes("quero ver o modelo") ||
-    t.includes("ver o modelo") ||
-    t.includes("ver modelo") ||
-    t.includes("quer ver o site") ||
-    t.includes("modelo do site") ||
-    t.includes("me mostra o modelo") ||
-    t.includes("me mostre o modelo")
-  ) {
-    return "Pediu modelo";
-  }
-
-
-  /*
-     INTERESSADO
-
-     Essa etapa vem depois de "Pediu modelo"
-     e "Orçamento", porque essas frases são
-     mais específicas.
-  */
-
-  if (
-    t.includes("tenho interesse") ||
-    t.includes("interessado") ||
-    t.includes("tenho interesse sim") ||
-    t.includes("gostei") ||
-    t.includes("quero fazer") ||
-    t.includes("quero sim") ||
-    t.includes("vamos fazer") ||
-    t.includes("pode fazer") ||
-    t.includes("tenho interesse no site") ||
-    t.includes("tenho interesse no projeto")
-  ) {
-    return "Interessado";
-  }
-
-
-  /*
-     RESPONDEU
-  */
-
-  if (
-    t === "respondeu" ||
-    t.includes("respondeu") ||
-    t.includes("resposta")
-  ) {
-    return "Respondeu";
-  }
-
-
-  /*
-     WHATSAPP CONFIRMADO NÃO É ETAPA.
-     Portanto:
-  */
-
-  return "Prospectado";
+  return String(linha)
+    .slice(pos + telefone.length)
+    .trim();
 }
 
+function textoAntesDoTelefone(linha, telefone) {
+  const pos = String(linha).indexOf(telefone);
 
-/* ============================================================
-   IDENTIFICAR TELEFONE
-   ============================================================ */
-
-function extrairTelefone(texto) {
-  if (!texto) {
-    return null;
+  if (pos < 0) {
+    return "";
   }
 
-  const original = String(texto);
-
-  /*
-     Primeiro procuramos números com DDD explícito.
-  */
-
-  const numeros = original.replace(/\D/g, "");
-
-  /*
-     Número com código do Brasil.
-  */
-
-  if (
-    numeros.startsWith("55") &&
-    numeros.length >= 12 &&
-    numeros.length <= 13
-  ) {
-    const sem55 = numeros.substring(2);
-
-    if (
-      sem55.length === 10 ||
-      sem55.length === 11
-    ) {
-      return formatarTelefone(sem55);
-    }
-  }
-
-
-  /*
-     Número brasileiro normal.
-  */
-
-  if (
-    numeros.length === 10 ||
-    numeros.length === 11
-  ) {
-    return formatarTelefone(numeros);
-  }
-
-
-  /*
-     Regex para casos em que existem outros caracteres.
-  */
-
-  const padrao =
-    /(?:\+?55[\s.-]*)?\(?\d{2}\)?[\s.-]*9?[\s.-]*\d{4}[\s.-]*\d{4}/;
-
-  const resultado =
-    original.match(padrao);
-
-  if (!resultado) {
-    return null;
-  }
-
-  const limpo =
-    resultado[0].replace(/\D/g, "");
-
-  const sem55 =
-    limpo.startsWith("55")
-      ? limpo.substring(2)
-      : limpo;
-
-  if (
-    sem55.length === 10 ||
-    sem55.length === 11
-  ) {
-    return formatarTelefone(sem55);
-  }
-
-  return null;
+  return String(linha)
+    .slice(0, pos)
+    .trim();
 }
 
-
-function linhaEhTelefone(linha) {
-  return !!extrairTelefone(linha);
-}
-
-
 /* ============================================================
-   IMPORTAÇÃO DE LISTA
-   ============================================================
+   ANALISAR LISTA
 
-   FUNCIONA COM:
-
-   Empresa
-   Telefone
-   Status
+   Aceita:
 
    Empresa
    Telefone
-   Status
+   Etapa
 
-   E TAMBÉM:
+   OU:
 
-   Empresa
-   Telefone
-   Status
-   Empresa
-   Telefone
-   Status
+   Empresa Telefone Etapa
 
-   Ou seja: NÃO depende de linhas vazias.
+   OU:
+
+   Empresa    Telefone    Etapa
+
+   OU vários contatos sem espaçamento.
    ============================================================ */
 
 function analisarLista(texto) {
-
-  const linhas = String(texto || "")
-    .split(/\r?\n/)
-    .map(linha => linha.trim())
-    .filter(linha => linha.length > 0);
-
+  const linhas = String(texto ?? "")
+    .replace(/\r/g, "")
+    .split("\n")
+    .map(l => l.trim())
+    .filter(Boolean);
 
   const contatos = [];
 
-  let empresaAtual = null;
-  let telefoneAtual = null;
-  let informacoesAtual = [];
+  let empresaPendente = "";
+  let contatoAtual = null;
 
-
-  function finalizarContato() {
-
-    if (!telefoneAtual) {
+  function finalizar() {
+    if (
+      !contatoAtual ||
+      !contatoAtual.telefone
+    ) {
       return;
     }
 
     const informacao =
-      informacoesAtual
+      contatoAtual.informacoes
         .join(" | ")
         .trim();
 
+    const etapa =
+      detectarEtapa(informacao);
 
     contatos.push({
-
       empresa:
-        empresaAtual ||
-        "Empresa sem nome",
+        limparEmpresa(
+          contatoAtual.empresa ||
+          "Empresa sem nome"
+        ),
 
       telefone:
         formatarTelefone(
-          telefoneAtual
+          contatoAtual.telefone
         ),
 
-      etapa:
-        detectarEtapa(
-          informacao
-        ),
+      etapa,
 
       observacao:
         informacao,
 
-      fonte:
-        "importacao"
-
+      fonte: "importacao"
     });
 
-
-    empresaAtual = null;
-    telefoneAtual = null;
-    informacoesAtual = [];
+    contatoAtual = null;
   }
 
+  for (const linha of linhas) {
 
-  for (
-    let i = 0;
-    i < linhas.length;
-    i++
-  ) {
+    const telefoneOriginal =
+      detectarTelefone(linha);
 
-    const linha =
-      linhas[i];
-
-
-    /*
+    /* -----------------------------------------
        ENCONTROU TELEFONE
-    */
+       ----------------------------------------- */
 
-    if (
-      linhaEhTelefone(linha)
-    ) {
+    if (telefoneOriginal) {
 
-      /*
-         Se já existe um telefone,
-         significa que o contato anterior
-         terminou.
-      */
+      finalizar();
 
-      if (telefoneAtual) {
-        finalizarContato();
-      }
+      const antes =
+        textoAntesDoTelefone(
+          linha,
+          telefoneOriginal
+        );
 
+      const depois =
+        textoDepoisDoTelefone(
+          linha,
+          telefoneOriginal
+        );
 
-      telefoneAtual =
-        extrairTelefone(linha);
+      const empresa =
+        limparEmpresa(antes) ||
+        empresaPendente ||
+        "Empresa sem nome";
 
-      continue;
-    }
+      contatoAtual = {
+        empresa,
 
+        telefone:
+          telefoneOriginal,
 
-    /*
-       AINDA NÃO TEMOS TELEFONE
+        informacoes:
+          depois
+            ? [depois]
+            : []
+      };
 
-       Portanto, a primeira linha encontrada
-       é o nome da empresa.
-    */
-
-    if (!telefoneAtual) {
-
-      if (!empresaAtual) {
-
-        empresaAtual =
-          linha;
-      }
+      empresaPendente = "";
 
       continue;
     }
 
+    /* -----------------------------------------
+       AINDA NÃO ENCONTROU TELEFONE
+       ----------------------------------------- */
 
-    /*
-       JÁ TEMOS:
+    if (!contatoAtual) {
 
-       empresa
-       +
-       telefone
+      if (!empresaPendente) {
+        empresaPendente =
+          limparEmpresa(linha);
+      }
 
-       Portanto, qualquer linha seguinte
-       pertence à informação/status desse
-       contato.
-    */
+      continue;
+    }
 
-    informacoesAtual.push(
-      linha
-    );
+    /* -----------------------------------------
+       JÁ TEM EMPRESA + TELEFONE
+
+       O restante é informação/status.
+       ----------------------------------------- */
+
+    contatoAtual.informacoes.push(linha);
   }
 
+  finalizar();
 
-  /*
-     FINALIZAR ÚLTIMO CONTATO
-  */
+  /* -----------------------------------------
+     REMOVE DUPLICADOS DA PRÓPRIA LISTA
+     ----------------------------------------- */
 
-  finalizarContato();
+  const mapa = new Map();
 
+  for (const contato of contatos) {
 
-  /*
-     REMOVER DUPLICADOS
-  */
-
-  return removerDuplicadosImportacao(
-    contatos
-  );
-}
-
-
-/* ============================================================
-   REMOVER DUPLICADOS DA IMPORTAÇÃO
-   ============================================================ */
-
-function removerDuplicadosImportacao(
-  contatos
-) {
-
-  const mapa =
-    new Map();
-
-
-  for (
-    const contato of contatos
-  ) {
-
-    const telefone =
+    const numero =
       normalizarTelefone(
         contato.telefone
       );
 
-
-    if (!telefone) {
+    if (!numero) {
       continue;
     }
 
-
-    if (
-      !mapa.has(telefone)
-    ) {
-
-      mapa.set(
-        telefone,
-        contato
-      );
+    if (!mapa.has(numero)) {
+      mapa.set(numero, contato);
     }
   }
 
-
-  return Array.from(
-    mapa.values()
-  );
+  return Array.from(mapa.values());
 }
-
-
-/* ============================================================
-   VERIFICAR DUPLICADO NO CRM
-   ============================================================ */
-
-function telefoneJaExiste(
-  telefone,
-  conversas
-) {
-
-  const numero =
-    normalizarTelefone(
-      telefone
-    );
-
-
-  return conversas.some(
-    conversa =>
-      normalizarTelefone(
-        conversa.telefone
-      ) === numero
-  );
-}
-
 
 /* ============================================================
    IMPORTAR CONTATOS
    ============================================================ */
 
-function importarContatos(
-  contatos
-) {
+function importarContatos(contatos) {
 
   const conversas =
-    carregarConversas();
-
+    getConversas();
 
   let adicionados = 0;
   let duplicados = 0;
 
+  for (const contato of contatos) {
 
-  contatos.forEach(
-    contato => {
-
-      if (!contato.telefone) {
-        return;
-      }
-
-
-      if (
-        telefoneJaExiste(
-          contato.telefone,
-          conversas
-        )
-      ) {
-
-        duplicados++;
-
-        return;
-      }
-
-
-      const novaConversa = {
-
-        id:
-          gerarId(),
-
-        empresa:
-          contato.empresa ||
-          "Empresa sem nome",
-
-        telefone:
-          formatarTelefone(
-            contato.telefone
-          ),
-
-        etapa:
-          etapaValida(
-            contato.etapa
-          )
-            ? contato.etapa
-            : "Prospectado",
-
-        ultimaAtividade:
-          hoje(),
-
-        observacao:
-          contato.observacao ||
-          "",
-
-        historico: [
-
-          {
-
-            data:
-              hoje(),
-
-            texto:
-              contato.observacao
-                ? `Contato importado. Informação: ${contato.observacao}`
-                : "Contato importado."
-
-          }
-
-        ]
-
-      };
-
-
-      conversas.push(
-        novaConversa
-      );
-
-
-      adicionados++;
+    if (
+      !contato.telefone ||
+      telefoneJaExiste(
+        contato.telefone,
+        conversas
+      )
+    ) {
+      duplicados++;
+      continue;
     }
-  );
 
+    conversas.push({
 
-  salvarConversas(
-    conversas
-  );
+      id: gerarId(),
 
+      company:
+        contato.empresa ||
+        "Empresa sem nome",
+
+      phone:
+        formatarTelefone(
+          contato.telefone
+        ),
+
+      stage:
+        etapaValida(contato.etapa)
+          ? contato.etapa
+          : "Prospectado",
+
+      firstReply: 0,
+
+      updated: hoje(),
+
+      note:
+        contato.observacao ||
+        "",
+
+      history: [
+        {
+          from: "system",
+
+          text:
+            contato.observacao
+              ? `Contato importado. Informação: ${contato.observacao}`
+              : "Contato importado.",
+
+          time: hoje()
+        }
+      ]
+    });
+
+    adicionados++;
+  }
+
+  salvarConversas(conversas);
 
   return {
     adicionados,
@@ -850,95 +733,58 @@ function importarContatos(
   };
 }
 
-
 /* ============================================================
-   INTERFACE DE IMPORTAÇÃO
+   BOTÃO IMPORTAR
    ============================================================ */
 
-function criarInterfaceImportacao() {
+function criarBotaoImportar() {
 
-  if (
-    document.getElementById(
-      "igImportarListaBtn"
-    )
-  ) {
+  if ($("igImportarListaBtn")) {
     return;
   }
 
-
-  const botoes =
-    Array.from(
-      document.querySelectorAll(
-        "button"
-      )
-    );
-
-
-  const botaoRegistro =
-    botoes.find(
-      botao =>
-        botao.textContent
-          .toLowerCase()
-          .includes(
-            "registrar conversa"
-          )
-    );
-
-
   const botao =
-    document.createElement(
-      "button"
-    );
-
+    document.createElement("button");
 
   botao.id =
     "igImportarListaBtn";
 
-
   botao.type =
     "button";
 
+  botao.className =
+    "secondary";
 
-  botao.innerHTML =
+  botao.textContent =
     "⇩ Importar lista";
 
-
-  botao.style.cssText = `
-    margin-left: 10px;
-    padding: 11px 18px;
-    border: 0;
-    border-radius: 10px;
-    background: #eef2f7;
-    color: #142033;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 14px;
-  `;
-
+  botao.style.marginLeft =
+    "10px";
 
   botao.addEventListener(
     "click",
-    abrirModalImportacao
+    abrirImportacao
   );
 
+  const botoes = [
+    $("newConversation2"),
+    $("newConversation")
+  ].filter(Boolean);
 
-  if (
-    botaoRegistro &&
-    botaoRegistro.parentElement
-  ) {
+  const referencia =
+    botoes[0];
 
-    botaoRegistro.parentElement.appendChild(
-      botao
-    );
+  if (referencia?.parentElement) {
+
+    referencia.parentElement
+      .appendChild(botao);
 
   } else {
 
-    document.body.appendChild(
-      botao
-    );
+    document.body
+      .appendChild(botao);
   }
 }
-
 
 /* ============================================================
    MODAL DE IMPORTAÇÃO
@@ -946,2508 +792,468 @@ function criarInterfaceImportacao() {
 
 function criarModalImportacao() {
 
-  if (
-    document.getElementById(
-      "igImportModal"
-    )
-  ) {
+  if ($("igImportModal")) {
     return;
   }
 
-
   const modal =
-    document.createElement(
-      "div"
-    );
-
+    document.createElement("div");
 
   modal.id =
     "igImportModal";
 
+  modal.className =
+    "modal";
 
   modal.innerHTML = `
+    <div class="modalbox" style="max-width:900px;">
 
-    <div
-      id="igImportOverlay"
-      style="
-        position:fixed;
-        inset:0;
-        background:rgba(15,23,42,.45);
-        z-index:9998;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        padding:20px;
-      "
-    >
+      <div class="modalTop">
+
+        <div>
+
+          <h2>
+            Importar lista de contatos
+          </h2>
+
+          <p class="muted">
+            Cole sua lista. O sistema identifica empresa,
+            telefone e etapa sem precisar de linhas em branco.
+          </p>
+
+        </div>
+
+        <button
+          type="button"
+          class="secondary"
+          id="igFecharImport"
+        >
+          Fechar
+        </button>
+
+      </div>
+
+      <div
+        class="safe"
+        style="margin-bottom:14px;"
+      >
+
+        <b>Formatos aceitos:</b><br>
+
+        Empresa + telefone + etapa
+        na mesma linha;<br>
+
+        Empresa / telefone / etapa
+        em linhas separadas;<br>
+
+        vários contatos seguidos,
+        mesmo sem espaçamento.
+
+      </div>
+
+      <textarea
+        id="igImportTextarea"
+        style="
+          width:100%;
+          min-height:260px;
+          box-sizing:border-box;
+          padding:14px;
+          border:1px solid #cbd5e1;
+          border-radius:10px;
+          font:inherit;
+          resize:vertical;
+        "
+        placeholder="Exemplo:
+Oficina Motor Sul (41) 99999-1001 Prospectado
+Estética Bella Vida (41) 98888-1002 Respondeu
+
+Ou:
+Oficina Motor Sul
+(41) 99999-1001
+Prospectado
+Estética Bella Vida
+(41) 98888-1002
+Respondeu"
+      ></textarea>
+
+      <div
+        id="igImportResultado"
+        style="margin-top:15px;"
+      ></div>
 
       <div
         style="
-          width:min(760px,100%);
-          max-height:90vh;
-          overflow:auto;
-          background:white;
-          border-radius:18px;
-          box-shadow:0 25px 70px rgba(0,0,0,.20);
-          padding:26px;
+          display:flex;
+          justify-content:flex-end;
+          gap:10px;
+          margin-top:15px;
+          flex-wrap:wrap;
         "
       >
 
-        <div
-          style="
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:20px;
-            margin-bottom:8px;
-          "
+        <button
+          type="button"
+          class="secondary"
+          id="igCancelarImport"
         >
+          Cancelar
+        </button>
 
-          <div>
-
-            <h2
-              style="
-                margin:0;
-                color:#111827;
-                font-size:22px;
-              "
-            >
-              Importar lista de contatos
-            </h2>
-
-            <p
-              style="
-                margin:7px 0 0;
-                color:#64748b;
-                font-size:14px;
-              "
-            >
-              Cole sua lista. O sistema identifica
-              empresa, telefone e etapa automaticamente.
-            </p>
-
-          </div>
-
-
-          <button
-            id="igFecharImportModal"
-            type="button"
-            style="
-              border:0;
-              background:#f1f5f9;
-              border-radius:9px;
-              width:38px;
-              height:38px;
-              cursor:pointer;
-              font-size:20px;
-            "
-          >
-            ×
-          </button>
-
-        </div>
-
-
-        <div
-          style="
-            margin-top:20px;
-            padding:13px 15px;
-            border-radius:10px;
-            background:#f8fafc;
-            border:1px solid #e2e8f0;
-            color:#475569;
-            font-size:13px;
-            line-height:1.6;
-          "
+        <button
+          type="button"
+          class="primary"
+          id="igAnalisarImport"
         >
+          Analisar lista
+        </button>
 
-          <strong>
-            Pode colar com ou sem linhas em branco.
-          </strong>
-
-          <br><br>
-
-          Exemplo:
-
-          <br><br>
-
-          Oficina Motor Sul<br>
-          (41) 99999-1001<br>
-          Prospectado<br>
-          Estética Bella Vida<br>
-          (41) 98888-1002<br>
-          Respondeu
-
-          <br><br>
-
-          O sistema reconhece o telefone como
-          separador de cada contato.
-
-        </div>
-
-
-        <textarea
-          id="igImportTextarea"
-          placeholder="Cole sua lista aqui..."
-          style="
-            width:100%;
-            min-height:260px;
-            margin-top:16px;
-            padding:15px;
-            box-sizing:border-box;
-            border:1px solid #cbd5e1;
-            border-radius:12px;
-            resize:vertical;
-            font-family:inherit;
-            font-size:14px;
-            line-height:1.55;
-            outline:none;
-          "
-        ></textarea>
-
-
-        <div
-          id="igImportResultado"
-          style="
-            margin-top:15px;
-            display:none;
-          "
-        ></div>
-
-
-        <div
-          style="
-            display:flex;
-            justify-content:flex-end;
-            gap:10px;
-            margin-top:18px;
-            flex-wrap:wrap;
-          "
+        <button
+          type="button"
+          class="primary"
+          id="igConfirmarImport"
+          style="display:none;"
         >
-
-          <button
-            id="igCancelarImportacao"
-            type="button"
-            style="
-              padding:11px 17px;
-              border:1px solid #cbd5e1;
-              border-radius:9px;
-              background:white;
-              color:#334155;
-              font-weight:600;
-              cursor:pointer;
-            "
-          >
-            Cancelar
-          </button>
-
-
-          <button
-            id="igAnalisarImportacao"
-            type="button"
-            style="
-              padding:11px 17px;
-              border:0;
-              border-radius:9px;
-              background:#3159d9;
-              color:white;
-              font-weight:600;
-              cursor:pointer;
-            "
-          >
-            Analisar lista
-          </button>
-
-
-          <button
-            id="igConfirmarImportacao"
-            type="button"
-            style="
-              display:none;
-              padding:11px 17px;
-              border:0;
-              border-radius:9px;
-              background:#16a34a;
-              color:white;
-              font-weight:600;
-              cursor:pointer;
-            "
-          >
-            Importar contatos
-          </button>
-
-        </div>
+          Importar contatos
+        </button>
 
       </div>
 
     </div>
   `;
 
+  document.body.appendChild(modal);
 
-  document.body.appendChild(
-    modal
-  );
+  $("igFecharImport").onclick =
+    fecharImportacao;
 
+  $("igCancelarImport").onclick =
+    fecharImportacao;
 
-  modal.style.display =
-    "none";
+  $("igAnalisarImport").onclick =
+    analisarImportacaoInterface;
 
-
-  document
-    .getElementById(
-      "igFecharImportModal"
-    )
-    .addEventListener(
-      "click",
-      fecharModalImportacao
-    );
-
-
-  document
-    .getElementById(
-      "igCancelarImportacao"
-    )
-    .addEventListener(
-      "click",
-      fecharModalImportacao
-    );
-
-
-  document
-    .getElementById(
-      "igAnalisarImportacao"
-    )
-    .addEventListener(
-      "click",
-      analisarImportacaoInterface
-    );
-
-
-  document
-    .getElementById(
-      "igConfirmarImportacao"
-    )
-    .addEventListener(
-      "click",
-      confirmarImportacaoInterface
-    );
+  $("igConfirmarImport").onclick =
+    confirmarImportacaoInterface;
 }
 
+function abrirImportacao() {
 
-/* ============================================================
-   ABRIR MODAL
-   ============================================================ */
+  criarModalImportacao();
 
-function abrirModalImportacao() {
+  $("igImportModal")
+    .classList
+    .add("show");
 
-  const modal =
-    document.getElementById(
-      "igImportModal"
-    );
+  $("igImportTextarea").value = "";
 
+  $("igImportResultado")
+    .innerHTML = "";
 
-  if (!modal) {
-    return;
-  }
+  $("igConfirmarImport")
+    .style.display = "none";
 
-
-  modal.style.display =
-    "block";
-
-
-  const textarea =
-    document.getElementById(
-      "igImportTextarea"
-    );
-
-
-  const resultado =
-    document.getElementById(
-      "igImportResultado"
-    );
-
-
-  const confirmar =
-    document.getElementById(
-      "igConfirmarImportacao"
-    );
-
-
-  if (textarea) {
-    textarea.value = "";
-  }
-
-
-  if (resultado) {
-
-    resultado.style.display =
-      "none";
-
-    resultado.innerHTML =
-      "";
-  }
-
-
-  if (confirmar) {
-
-    confirmar.style.display =
-      "none";
-  }
-
-
-  window.igContatosImportacao =
-    [];
-
+  importadosTemporarios = [];
 
   setTimeout(
-    () => textarea?.focus(),
-    100
+    () =>
+      $("igImportTextarea")?.focus(),
+    50
   );
 }
 
+function fecharImportacao() {
 
-/* ============================================================
-   FECHAR MODAL
-   ============================================================ */
+  $("igImportModal")
+    ?.classList
+    .remove("show");
 
-function fecharModalImportacao() {
-
-  const modal =
-    document.getElementById(
-      "igImportModal"
-    );
-
-
-  if (modal) {
-
-    modal.style.display =
-      "none";
-  }
-
-
-  window.igContatosImportacao =
-    [];
+  importadosTemporarios = [];
 }
-
-
-/* ============================================================
-   ANALISAR IMPORTAÇÃO NA INTERFACE
-   ============================================================ */
 
 function analisarImportacaoInterface() {
 
-  const textarea =
-    document.getElementById(
-      "igImportTextarea"
-    );
-
-
-  const resultado =
-    document.getElementById(
-      "igImportResultado"
-    );
-
-
-  const confirmar =
-    document.getElementById(
-      "igConfirmarImportacao"
-    );
-
-
-  if (!textarea || !resultado) {
-    return;
-  }
-
-
   const texto =
-    textarea.value.trim();
-
-
-  if (!texto) {
-
-    resultado.style.display =
-      "block";
-
-
-    resultado.innerHTML = `
-
-      <div
-        style="
-          padding:13px;
-          border-radius:10px;
-          background:#fef2f2;
-          color:#991b1b;
-          border:1px solid #fecaca;
-        "
-      >
-        Cole uma lista de contatos antes de analisar.
-      </div>
-
-    `;
-
-
-    if (confirmar) {
-      confirmar.style.display =
-        "none";
-    }
-
-
-    return;
-  }
-
-
-  const contatos =
-    analisarLista(
-      texto
-    );
-
-
-  window.igContatosImportacao =
-    contatos;
-
-
-  if (!contatos.length) {
-
-    resultado.style.display =
-      "block";
-
-
-    resultado.innerHTML = `
-
-      <div
-        style="
-          padding:13px;
-          border-radius:10px;
-          background:#fef2f2;
-          color:#991b1b;
-          border:1px solid #fecaca;
-        "
-      >
-        Não consegui identificar nenhum contato.
-        <br><br>
-        Verifique se a lista possui empresa e telefone.
-      </div>
-
-    `;
-
-
-    if (confirmar) {
-      confirmar.style.display =
-        "none";
-    }
-
-
-    return;
-  }
-
-
-  const conversas =
-    carregarConversas();
-
-
-  let novos = 0;
-  let duplicados = 0;
-
-
-  contatos.forEach(
-    contato => {
-
-      if (
-        telefoneJaExiste(
-          contato.telefone,
-          conversas
-        )
-      ) {
-
-        duplicados++;
-
-      } else {
-
-        novos++;
-      }
-    }
-  );
-
-
-  let tabela = `
-
-    <div
-      style="
-        padding:14px;
-        border-radius:10px;
-        background:#f0fdf4;
-        border:1px solid #bbf7d0;
-        margin-bottom:14px;
-      "
-    >
-
-      <strong
-        style="
-          color:#166534;
-        "
-      >
-        ${contatos.length}
-        contato(s) identificado(s)
-      </strong>
-
-      <div
-        style="
-          margin-top:5px;
-          color:#475569;
-          font-size:13px;
-        "
-      >
-        ${novos}
-        novo(s) serão importados.
-
-        ${duplicados}
-        já existem no CRM.
-      </div>
-
-    </div>
-
-
-    <div
-      style="
-        border:1px solid #e2e8f0;
-        border-radius:10px;
-        overflow:auto;
-        max-height:300px;
-      "
-    >
-
-      <table
-        style="
-          width:100%;
-          border-collapse:collapse;
-          font-size:13px;
-        "
-      >
-
-        <thead>
-
-          <tr
-            style="
-              background:#f8fafc;
-              text-align:left;
-            "
-          >
-
-            <th style="padding:10px;">
-              Empresa
-            </th>
-
-            <th style="padding:10px;">
-              Telefone
-            </th>
-
-            <th style="padding:10px;">
-              Etapa
-            </th>
-
-          </tr>
-
-        </thead>
-
-        <tbody>
-  `;
-
-
-  contatos.forEach(
-    contato => {
-
-      const existe =
-        telefoneJaExiste(
-          contato.telefone,
-          conversas
-        );
-
-
-      tabela += `
-
-        <tr
-          style="
-            border-top:1px solid #e2e8f0;
-            ${existe ? "opacity:.55;" : ""}
-          "
-        >
-
-          <td style="padding:10px;">
-            ${escaparHTML(
-              contato.empresa
-            )}
-          </td>
-
-          <td style="padding:10px;">
-            ${escaparHTML(
-              contato.telefone
-            )}
-          </td>
-
-          <td style="padding:10px;">
-
-            <span
-              style="
-                display:inline-block;
-                padding:4px 8px;
-                border-radius:999px;
-                background:#eef2ff;
-                color:#3159d9;
-                font-size:11px;
-              "
-            >
-              ${escaparHTML(
-                contato.etapa
-              )}
-            </span>
-
-          </td>
-
-        </tr>
-
-      `;
-    }
-  );
-
-
-  tabela += `
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-  `;
-
-
-  resultado.style.display =
-    "block";
-
-
-  resultado.innerHTML =
-    tabela;
-
-
-  if (confirmar) {
-
-    confirmar.style.display =
-      novos > 0
-        ? "inline-block"
-        : "none";
-  }
-}
-
-
-/* ============================================================
-   CONFIRMAR IMPORTAÇÃO
-   ============================================================ */
-
-function confirmarImportacaoInterface() {
-
-  const contatos =
-    window.igContatosImportacao ||
-    [];
-
-
-  if (!contatos.length) {
-    return;
-  }
-
+    $("igImportTextarea")?.value || "";
 
   const resultado =
-    importarContatos(
-      contatos
-    );
-
-
-  const elemento =
-    document.getElementById(
-      "igImportResultado"
-    );
-
-
-  if (elemento) {
-
-    elemento.style.display =
-      "block";
-
-
-    elemento.innerHTML = `
-
-      <div
-        style="
-          padding:15px;
-          border-radius:10px;
-          background:#f0fdf4;
-          border:1px solid #bbf7d0;
-          color:#166534;
-        "
-      >
-
-        <strong>
-          Importação concluída.
-        </strong>
-
-        <div
-          style="
-            margin-top:7px;
-          "
-        >
-          ${resultado.adicionados}
-          contato(s) adicionado(s).
-        </div>
-
-        <div
-          style="
-            margin-top:3px;
-          "
-        >
-          ${resultado.duplicados}
-          contato(s) ignorado(s) porque
-          já estavam no CRM.
-        </div>
-
-      </div>
-
-    `;
-  }
-
+    $("igImportResultado");
 
   const confirmar =
-    document.getElementById(
-      "igConfirmarImportacao"
-    );
+    $("igConfirmarImport");
 
+  if (!texto.trim()) {
 
-  if (confirmar) {
+    resultado.innerHTML =
+      `<div class="safe">
+        Cole uma lista antes de analisar.
+      </div>`;
 
     confirmar.style.display =
       "none";
-  }
 
-
-  window.igContatosImportacao =
-    [];
-
-
-  render();
-}
-
-
-/* ============================================================
-   FILTRAR CONVERSAS
-   ============================================================ */
-
-function obterConversasFiltradas() {
-
-  const conversas =
-    carregarConversas();
-
-
-  const input =
-    document.getElementById(
-      "searchInput"
-    );
-
-
-  const select =
-    document.getElementById(
-      "stageFilter"
-    );
-
-
-  const busca =
-    input?.value
-      ?.toLowerCase()
-      ?.trim() ||
-    "";
-
-
-  const filtro =
-    select?.value ||
-    "";
-
-
-  return conversas.filter(
-    conversa => {
-
-      const textoBusca = `
-
-        ${conversa.empresa || ""}
-
-        ${conversa.telefone || ""}
-
-        ${conversa.observacao || ""}
-
-      `.toLowerCase();
-
-
-      const correspondeBusca =
-        !busca ||
-        textoBusca.includes(
-          busca
-        );
-
-
-      const correspondeEtapa =
-        !filtro ||
-        filtro === "Todas as etapas" ||
-        conversa.etapa === filtro;
-
-
-      return (
-        correspondeBusca &&
-        correspondeEtapa
-      );
-    }
-  );
-}
-
-
-/* ============================================================
-   RENDER PRINCIPAL
-   ============================================================ */
-
-function render() {
-
-  renderListaConversas();
-
-  atualizarContadores();
-
-  atualizarFunil();
-
-  atualizarAnalise();
-
-  atualizarAnotacoes();
-
-  renderDashboard();
-}
-
-
-/* ============================================================
-   RENDER CONVERSAS
-   ============================================================ */
-
-function renderListaConversas() {
-
-  const conversas =
-    obterConversasFiltradas();
-
-
-  const tbody =
-    document.querySelector(
-      "#conversationsTable tbody"
-    ) ||
-    document.querySelector(
-      "#conversations-table tbody"
-    ) ||
-    document.querySelector(
-      "table tbody"
-    );
-
-
-  if (!tbody) {
     return;
   }
 
+  const contatos =
+    analisarLista(texto);
 
-  tbody.innerHTML =
-    "";
+  importadosTemporarios =
+    contatos;
 
+  if (!contatos.length) {
 
-  conversas.forEach(
-    conversa => {
+    resultado.innerHTML =
+      `<div class="safe">
+        Não consegui identificar nenhum contato.
+        Verifique se existem números de telefone.
+      </div>`;
 
-      const tr =
-        document.createElement(
-          "tr"
-        );
+    confirmar.style.display =
+      "none";
 
-
-      tr.innerHTML = `
-
-        <td>
-          <strong>
-            ${escaparHTML(
-              conversa.empresa
-            )}
-          </strong>
-        </td>
-
-        <td>
-          ${escaparHTML(
-            conversa.telefone
-          )}
-        </td>
-
-        <td>
-
-          <span
-            class="stage-badge"
-          >
-            ${escaparHTML(
-              conversa.etapa
-            )}
-          </span>
-
-        </td>
-
-        <td>
-          ${escaparHTML(
-            conversa.ultimaAtividade
-          )}
-        </td>
-
-        <td>
-
-          <button
-            type="button"
-            class="view-conversation-btn"
-            data-id="${conversa.id}"
-          >
-            Ver conversa
-          </button>
-
-        </td>
-
-      `;
-
-
-      tbody.appendChild(
-        tr
-      );
-    }
-  );
-
-
-  document
-    .querySelectorAll(
-      ".view-conversation-btn"
-    )
-    .forEach(
-      botao => {
-
-        botao.addEventListener(
-          "click",
-          () => {
-
-            abrirConversa(
-              Number(
-                botao.dataset.id
-              )
-            );
-          }
-        );
-      }
-    );
-}
-
-
-/* ============================================================
-   ABRIR CONVERSA
-   ============================================================ */
-
-function abrirConversa(id) {
-
-  const conversas =
-    carregarConversas();
-
-
-  const conversa =
-    conversas.find(
-      item =>
-        Number(item.id) ===
-        Number(id)
-    );
-
-
-  if (!conversa) {
     return;
   }
 
-
-  let modal =
-    document.getElementById(
-      "conversationModal"
+  const existentes =
+    new Set(
+      getConversas().map(
+        c =>
+          normalizarTelefone(c.phone)
+      )
     );
 
+  const novos =
+    contatos.filter(
+      c =>
+        !existentes.has(
+          normalizarTelefone(
+            c.telefone
+          )
+        )
+    ).length;
 
-  if (!modal) {
+  const duplicados =
+    contatos.length - novos;
 
-    modal =
-      document.createElement(
-        "div"
-      );
+  resultado.innerHTML = `
 
+    <div
+      class="card"
+      style="padding:14px;"
+    >
 
-    modal.id =
-      "conversationModal";
+      <p>
+        <b>
+          ${contatos.length}
+          contato(s) identificado(s)
+        </b>
+      </p>
 
-
-    modal.innerHTML = `
+      <p>
+        ${novos} novo(s) serão importados
+        •
+        ${duplicados} já cadastrado(s)
+      </p>
 
       <div
         style="
-          position:fixed;
-          inset:0;
-          background:rgba(15,23,42,.45);
-          z-index:9997;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          padding:20px;
+          overflow:auto;
+          max-height:300px;
         "
       >
 
-        <div
+        <table
           style="
-            background:white;
-            width:min(650px,100%);
-            max-height:90vh;
-            overflow:auto;
-            border-radius:18px;
-            padding:25px;
+            width:100%;
+            border-collapse:collapse;
           "
         >
 
-          <div
-            id="conversationModalContent"
-          ></div>
+          <thead>
 
-        </div>
+            <tr>
 
-      </div>
-
-    `;
-
-
-    document.body.appendChild(
-      modal
-    );
-  }
-
-
-  const content =
-    document.getElementById(
-      "conversationModalContent"
-    );
-
-
-  if (!content) {
-    return;
-  }
-
-
-  const historico =
-    Array.isArray(
-      conversa.historico
-    )
-      ? conversa.historico
-      : [];
-
-
-  content.innerHTML = `
-
-    <div
-      style="
-        display:flex;
-        justify-content:space-between;
-        align-items:flex-start;
-        gap:15px;
-      "
-    >
-
-      <div>
-
-        <h2
-          style="
-            margin:0;
-          "
-        >
-          ${escaparHTML(
-            conversa.empresa
-          )}
-        </h2>
-
-        <p
-          style="
-            margin:5px 0 0;
-            color:#64748b;
-          "
-        >
-          ${escaparHTML(
-            conversa.telefone
-          )}
-        </p>
-
-      </div>
-
-
-      <button
-        id="fecharConversationModal"
-        type="button"
-        style="
-          border:0;
-          background:#f1f5f9;
-          border-radius:8px;
-          width:36px;
-          height:36px;
-          cursor:pointer;
-          font-size:20px;
-        "
-      >
-        ×
-      </button>
-
-    </div>
-
-
-    <div
-      style="
-        margin-top:20px;
-        padding:14px;
-        background:#f8fafc;
-        border-radius:10px;
-      "
-    >
-
-      <strong>
-        Etapa:
-      </strong>
-
-      ${escaparHTML(
-        conversa.etapa
-      )}
-
-      <br><br>
-
-      <strong>
-        Última atividade:
-      </strong>
-
-      ${escaparHTML(
-        conversa.ultimaAtividade
-      )}
-
-    </div>
-
-
-    ${
-      conversa.observacao
-        ? `
-
-          <div
-            style="
-              margin-top:15px;
-              padding:14px;
-              border:1px solid #e2e8f0;
-              border-radius:10px;
-            "
-          >
-
-            <strong>
-              Observação
-            </strong>
-
-            <p
-              style="
-                margin:8px 0 0;
-                color:#475569;
-              "
-            >
-              ${escaparHTML(
-                conversa.observacao
-              )}
-            </p>
-
-          </div>
-
-        `
-        : ""
-    }
-
-
-    <h3
-      style="
-        margin-top:22px;
-      "
-    >
-      Histórico
-    </h3>
-
-
-    <div>
-
-      ${
-        historico.length
-          ? historico
-              .map(
-                item => `
-
-                  <div
-                    style="
-                      padding:12px;
-                      border-bottom:1px solid #e2e8f0;
-                    "
-                  >
-
-                    <div
-                      style="
-                        font-size:12px;
-                        color:#64748b;
-                      "
-                    >
-                      ${escaparHTML(
-                        item.data
-                      )}
-                    </div>
-
-                    <div
-                      style="
-                        margin-top:4px;
-                      "
-                    >
-                      ${escaparHTML(
-                        item.texto
-                      )}
-                    </div>
-
-                  </div>
-
-                `
-              )
-              .join("")
-          : `
-
-              <p
+              <th
                 style="
-                  color:#64748b;
+                  text-align:left;
+                  padding:8px;
                 "
               >
-                Nenhum histórico registrado.
-              </p>
+                Empresa
+              </th>
 
-            `
-      }
+              <th
+                style="
+                  text-align:left;
+                  padding:8px;
+                "
+              >
+                Telefone
+              </th>
+
+              <th
+                style="
+                  text-align:left;
+                  padding:8px;
+                "
+              >
+                Etapa
+              </th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            ${contatos.map(c => `
+
+              <tr>
+
+                <td
+                  style="
+                    padding:8px;
+                    border-top:1px solid #e2e8f0;
+                  "
+                >
+                  ${escaparHTML(c.empresa)}
+                </td>
+
+                <td
+                  style="
+                    padding:8px;
+                    border-top:1px solid #e2e8f0;
+                  "
+                >
+                  ${escaparHTML(c.telefone)}
+                </td>
+
+                <td
+                  style="
+                    padding:8px;
+                    border-top:1px solid #e2e8f0;
+                  "
+                >
+                  ${escaparHTML(c.etapa)}
+                </td>
+
+              </tr>
+
+            `).join("")}
+
+          </tbody>
+
+        </table>
+
+      </div>
 
     </div>
-
   `;
 
-
-  modal.style.display =
-    "block";
-
-
-  document
-    .getElementById(
-      "fecharConversationModal"
-    )
-    ?.addEventListener(
-      "click",
-      () => {
-
-        modal.style.display =
-          "none";
-      }
-    );
+  confirmar.style.display =
+    novos > 0
+      ? "inline-block"
+      : "none";
 }
 
+function confirmarImportacaoInterface() {
 
-/* ============================================================
-   CONTADORES
-   ============================================================ */
-
-function atualizarContadores() {
-
-  const conversas =
-    carregarConversas();
-
-
-  const total =
-    conversas.length;
-
-
-  const respondidas =
-    conversas.filter(
-      conversa =>
-        conversa.etapa !==
-        "Prospectado"
-    ).length;
-
-
-  const interessadas =
-    conversas.filter(
-      conversa =>
-        conversa.etapa ===
-          "Interessado" ||
-        conversa.etapa ===
-          "Pediu modelo" ||
-        conversa.etapa ===
-          "Orçamento / negociação" ||
-        conversa.etapa ===
-          "Venda fechada"
-    ).length;
-
-
-  const vendas =
-    conversas.filter(
-      conversa =>
-        conversa.etapa ===
-        "Venda fechada"
-    ).length;
-
-
-  atualizarElementoTexto(
-    [
-      "totalConversas",
-      "total-conversas"
-    ],
-    total
-  );
-
-
-  atualizarElementoTexto(
-    [
-      "respondidas",
-      "totalRespondidas"
-    ],
-    respondidas
-  );
-
-
-  atualizarElementoTexto(
-    [
-      "interessadas",
-      "totalInteressadas"
-    ],
-    interessadas
-  );
-
-
-  atualizarElementoTexto(
-    [
-      "vendasFechadas",
-      "totalVendas"
-    ],
-    vendas
-  );
-}
-
-
-function atualizarElementoTexto(
-  ids,
-  valor
-) {
-
-  ids.forEach(
-    id => {
-
-      const elemento =
-        document.getElementById(
-          id
-        );
-
-
-      if (elemento) {
-
-        elemento.textContent =
-          valor;
-      }
-    }
-  );
-}
-
-
-/* ============================================================
-   FUNIL
-   ============================================================ */
-
-function atualizarFunil() {
-
-  const conversas =
-    carregarConversas();
-
-
-  const contagem =
-    {};
-
-
-  ETAPAS.forEach(
-    etapa => {
-
-      contagem[etapa] =
-        0;
-    }
-  );
-
-
-  conversas.forEach(
-    conversa => {
-
-      if (
-        contagem[
-          conversa.etapa
-        ] !== undefined
-      ) {
-
-        contagem[
-          conversa.etapa
-        ]++;
-      }
-    }
-  );
-
-
-  ETAPAS.forEach(
-    etapa => {
-
-      const id =
-        normalizarTexto(
-          etapa
-        )
-          .replace(
-            /[^a-z0-9]+/g,
-            "-"
-          );
-
-
-      atualizarElementoTexto(
-        [
-          `funil-${id}`,
-          `funnel-${id}`,
-          `stage-${id}`
-        ],
-        contagem[etapa]
-      );
-    }
-  );
-}
-
-
-/* ============================================================
-   ANÁLISE
-   ============================================================ */
-
-function atualizarAnalise() {
-
-  const conversas =
-    carregarConversas();
-
-
-  const total =
-    conversas.length;
-
-
-  if (!total) {
-
-    atualizarElementoTexto(
-      ["taxaResposta"],
-      "0%"
-    );
-
-    atualizarElementoTexto(
-      ["taxaInteresse"],
-      "0%"
-    );
-
-    atualizarElementoTexto(
-      ["taxaModelo"],
-      "0%"
-    );
-
-    atualizarElementoTexto(
-      ["taxaVenda"],
-      "0%"
-    );
-
+  if (!importadosTemporarios.length) {
     return;
   }
 
-
-  const respondidas =
-    conversas.filter(
-      conversa =>
-        conversa.etapa !==
-        "Prospectado"
-    ).length;
-
-
-  const interessadas =
-    conversas.filter(
-      conversa =>
-        conversa.etapa ===
-          "Interessado" ||
-        conversa.etapa ===
-          "Pediu modelo" ||
-        conversa.etapa ===
-          "Orçamento / negociação" ||
-        conversa.etapa ===
-          "Venda fechada"
-    ).length;
-
-
-  const modelos =
-    conversas.filter(
-      conversa =>
-        conversa.etapa ===
-        "Pediu modelo"
-    ).length;
-
-
-  const vendas =
-    conversas.filter(
-      conversa =>
-        conversa.etapa ===
-        "Venda fechada"
-    ).length;
-
-
-  const taxaResposta =
-    (
-      respondidas /
-      total
-    ) * 100;
-
-
-  const taxaInteresse =
-    (
-      interessadas /
-      total
-    ) * 100;
-
-
-  const taxaModelo =
-    (
-      modelos /
-      total
-    ) * 100;
-
-
-  const taxaVenda =
-    (
-      vendas /
-      total
-    ) * 100;
-
-
-  atualizarElementoTexto(
-    ["taxaResposta"],
-    `${taxaResposta.toFixed(1)}%`
-  );
-
-
-  atualizarElementoTexto(
-    ["taxaInteresse"],
-    `${taxaInteresse.toFixed(1)}%`
-  );
-
-
-  atualizarElementoTexto(
-    ["taxaModelo"],
-    `${taxaModelo.toFixed(1)}%`
-  );
-
-
-  atualizarElementoTexto(
-    ["taxaVenda"],
-    `${taxaVenda.toFixed(1)}%`
-  );
-}
-
-
-/* ============================================================
-   ANOTAÇÕES
-   ============================================================ */
-
-function atualizarAnotacoes() {
-
-  const anotacoes =
-    carregarAnotacoes();
-
-
-  const container =
-    document.getElementById(
-      "anotacoesLista"
+  const resultado =
+    importarContatos(
+      importadosTemporarios
     );
 
+  $("igImportResultado")
+    .innerHTML = `
 
-  if (!container) {
-    return;
-  }
+      <div class="safe">
 
+        <b>
+          Importação concluída.
+        </b>
 
-  if (!anotacoes.length) {
+        <br>
 
-    container.innerHTML = `
+        ${resultado.adicionados}
+        contato(s) adicionado(s).
 
-      <p
-        style="
-          color:#64748b;
-        "
-      >
-        Nenhuma anotação registrada.
-      </p>
+        <br>
 
+        ${resultado.duplicados}
+        contato(s) ignorado(s)
+        por duplicidade.
+
+      </div>
     `;
 
-    return;
-  }
+  $("igConfirmarImport")
+    .style.display = "none";
 
-
-  container.innerHTML =
-    anotacoes
-      .map(
-        anotacao => `
-
-          <div
-            style="
-              padding:13px;
-              border-bottom:1px solid #e2e8f0;
-            "
-          >
-
-            <div
-              style="
-                font-size:12px;
-                color:#64748b;
-              "
-            >
-              ${escaparHTML(
-                anotacao.data
-              )}
-            </div>
-
-            <div
-              style="
-                margin-top:5px;
-              "
-            >
-              ${escaparHTML(
-                anotacao.texto
-              )}
-            </div>
-
-          </div>
-
-        `
-      )
-      .join("");
-}
-
-
-/* ============================================================
-   DASHBOARD / VISÃO GERAL
-   ============================================================ */
-
-function renderDashboard() {
-
-  const conversas =
-    carregarConversas();
-
-
-  const recentes =
-    [...conversas]
-      .sort(
-        (a, b) =>
-          String(
-            b.ultimaAtividade
-          ).localeCompare(
-            String(
-              a.ultimaAtividade
-            )
-          )
-      )
-      .slice(0, 5);
-
-
-  /*
-     Procura containers comuns.
-  */
-
-  const containers =
-    [
-      "recentConversations",
-      "conversasRecentes",
-      "recentes",
-      "recent-conversations"
-    ];
-
-
-  let container = null;
-
-
-  for (
-    const id of containers
-  ) {
-
-    const elemento =
-      document.getElementById(
-        id
-      );
-
-
-    if (elemento) {
-
-      container =
-        elemento;
-
-      break;
-    }
-  }
-
-
-  if (!container) {
-    return;
-  }
-
-
-  if (!recentes.length) {
-
-    container.innerHTML = "";
-
-    return;
-  }
-
-
-  container.innerHTML =
-    recentes
-      .map(
-        conversa => `
-
-          <div
-            style="
-              padding:10px 0;
-              border-bottom:1px solid #e2e8f0;
-            "
-          >
-
-            <strong>
-              ${escaparHTML(
-                conversa.empresa
-              )}
-            </strong>
-
-            <div
-              style="
-                font-size:12px;
-                color:#64748b;
-                margin-top:3px;
-              "
-            >
-              ${escaparHTML(
-                conversa.etapa
-              )}
-            </div>
-
-          </div>
-
-        `
-      )
-      .join("");
-}
-
-
-/* ============================================================
-   FILTROS
-   ============================================================ */
-
-function configurarFiltros() {
-
-  const search =
-    document.getElementById(
-      "searchInput"
-    );
-
-
-  const filtro =
-    document.getElementById(
-      "stageFilter"
-    );
-
-
-  if (search) {
-
-    search.addEventListener(
-      "input",
-      render
-    );
-  }
-
-
-  if (filtro) {
-
-    filtro.addEventListener(
-      "change",
-      render
-    );
-  }
-}
-
-
-/* ============================================================
-   FILTRO DE ETAPAS
-   ============================================================ */
-
-function configurarFiltroEtapas() {
-
-  const select =
-    document.getElementById(
-      "stageFilter"
-    );
-
-
-  if (!select) {
-    return;
-  }
-
-
-  /*
-     Se já estiver configurado pelo HTML,
-     não sobrescreve.
-  */
-
-  if (
-    select.options.length >
-    1
-  ) {
-    return;
-  }
-
-
-  select.innerHTML = `
-
-    <option value="">
-      Todas as etapas
-    </option>
-
-    ${ETAPAS
-      .map(
-        etapa => `
-
-          <option
-            value="${escaparHTML(
-              etapa
-            )}"
-          >
-            ${escaparHTML(
-              etapa
-            )}
-          </option>
-
-        `
-      )
-      .join("")}
-
-  `;
-}
-
-
-/* ============================================================
-   ADICIONAR CONVERSA
-   ============================================================ */
-
-function adicionarConversaManual(
-  empresa,
-  telefone,
-  etapa = "Prospectado",
-  observacao = ""
-) {
-
-  const conversas =
-    carregarConversas();
-
-
-  if (
-    telefoneJaExiste(
-      telefone,
-      conversas
-    )
-  ) {
-
-    alert(
-      "Este telefone já está cadastrado no CRM."
-    );
-
-    return false;
-  }
-
-
-  const novaConversa = {
-
-    id:
-      gerarId(),
-
-    empresa:
-      String(
-        empresa || ""
-      ).trim(),
-
-    telefone:
-      formatarTelefone(
-        telefone
-      ),
-
-    etapa:
-      etapaValida(
-        etapa
-      )
-        ? etapa
-        : "Prospectado",
-
-    ultimaAtividade:
-      hoje(),
-
-    observacao:
-      String(
-        observacao || ""
-      ).trim(),
-
-    historico: [
-
-      {
-        data:
-          hoje(),
-
-        texto:
-          "Conversa registrada manualmente."
-      }
-
-    ]
-
-  };
-
-
-  conversas.push(
-    novaConversa
-  );
-
-
-  salvarConversas(
-    conversas
-  );
-
-
-  render();
-
-
-  return true;
-}
-
-
-/* ============================================================
-   ALTERAR ETAPA
-   ============================================================ */
-
-function atualizarEtapa(
-  id,
-  novaEtapa
-) {
-
-  const conversas =
-    carregarConversas();
-
-
-  const conversa =
-    conversas.find(
-      item =>
-        Number(item.id) ===
-        Number(id)
-    );
-
-
-  if (!conversa) {
-    return;
-  }
-
-
-  if (
-    !etapaValida(
-      novaEtapa
-    )
-  ) {
-    return;
-  }
-
-
-  conversa.etapa =
-    novaEtapa;
-
-
-  conversa.ultimaAtividade =
-    hoje();
-
-
-  if (
-    !Array.isArray(
-      conversa.historico
-    )
-  ) {
-
-    conversa.historico =
-      [];
-  }
-
-
-  conversa.historico.push({
-
-    data:
-      hoje(),
-
-    texto:
-      `Etapa alterada para "${novaEtapa}".`
-
-  });
-
-
-  salvarConversas(
-    conversas
-  );
-
+  importadosTemporarios = [];
 
   render();
 }
-
-
-/* ============================================================
-   ADICIONAR HISTÓRICO
-   ============================================================ */
-
-function adicionarHistorico(
-  id,
-  texto
-) {
-
-  const conversas =
-    carregarConversas();
-
-
-  const conversa =
-    conversas.find(
-      item =>
-        Number(item.id) ===
-        Number(id)
-    );
-
-
-  if (!conversa) {
-    return;
-  }
-
-
-  if (
-    !Array.isArray(
-      conversa.historico
-    )
-  ) {
-
-    conversa.historico =
-      [];
-  }
-
-
-  conversa.historico.push({
-
-    data:
-      hoje(),
-
-    texto:
-      String(
-        texto || ""
-      ).trim()
-
-  });
-
-
-  conversa.ultimaAtividade =
-    hoje();
-
-
-  salvarConversas(
-    conversas
-  );
-
-
-  render();
-}
-
-
-/* ============================================================
-   EXPORTAR
-   ============================================================ */
-
-function exportarConversas() {
-
-  const conversas =
-    carregarConversas();
-
-
-  const arquivo =
-    new Blob(
-      [
-        JSON.stringify(
-          conversas,
-          null,
-          2
-        )
-      ],
-      {
-        type:
-          "application/json"
-      }
-    );
-
-
-  const url =
-    URL.createObjectURL(
-      arquivo
-    );
-
-
-  const link =
-    document.createElement(
-      "a"
-    );
-
-
-  link.href =
-    url;
-
-
-  link.download =
-    `ig-sites-conversas-${hoje()}.json`;
-
-
-  document.body.appendChild(
-    link
-  );
-
-
-  link.click();
-
-
-  link.remove();
-
-
-  URL.revokeObjectURL(
-    url
-  );
-}
-
-
-/* ============================================================
-   RESTAURAR DEMO
-   ============================================================ */
-
-function restaurarDadosDemo() {
-
-  const confirmar =
-    window.confirm(
-      "Isso substituirá os contatos atuais pelos dados de demonstração. Deseja continuar?"
-    );
-
-
-  if (!confirmar) {
-    return;
-  }
-
-
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(
-      dadosIniciais
-    )
-  );
-
-
-  render();
-
-
-  alert(
-    "Dados de demonstração restaurados."
-  );
-}
-
-
-/* ============================================================
-   ESTILOS
-   ============================================================ */
-
-function aplicarEstilos() {
-
-  if (
-    document.getElementById(
-      "igSitesJSStyles"
-    )
-  ) {
-    return;
-  }
-
-
-  const style =
-    document.createElement(
-      "style"
-    );
-
-
-  style.id =
-    "igSitesJSStyles";
-
-
-  style.textContent = `
-
-    .stage-badge {
-
-      display:inline-flex;
-
-      align-items:center;
-
-      padding:5px 9px;
-
-      border-radius:999px;
-
-      background:#eef3ff;
-
-      color:#3159d9;
-
-      font-size:11px;
-
-      font-weight:500;
-
-      white-space:nowrap;
-
-    }
-
-
-    #igImportTextarea:focus {
-
-      border-color:#3159d9 !important;
-
-      box-shadow:
-        0 0 0 3px
-        rgba(49,89,217,.10);
-
-    }
-
-
-    #igImportModal button:hover {
-
-      filter:brightness(.97);
-
-    }
-
-  `;
-
-
-  document.head.appendChild(
-    style
-  );
-}
-
 
 /* ============================================================
    NAVEGAÇÃO
-   ============================================================
-
-   O sistema tenta preservar a navegação que já existe no
-   seu HTML.
-
-   Primeiro verifica links reais.
-
-   Depois verifica data-page.
-
-   Depois verifica IDs conhecidos.
-
    ============================================================ */
 
-function normalizarNomePagina(
-  nome
-) {
+function mostrarPagina(view) {
 
-  return String(
-    nome || ""
-  )
-    .normalize("NFD")
-    .replace(
-      /[\u0300-\u036f]/g,
-      ""
+  const nome =
+    TITULOS[view]
+      ? view
+      : "dashboard";
+
+  /*
+     MOSTRA SOMENTE A VIEW ESCOLHIDA
+  */
+
+  document
+    .querySelectorAll(".view")
+    .forEach(secao => {
+
+      secao.classList.toggle(
+        "active",
+        secao.id === nome
+      );
+
+    });
+
+  /*
+     ATIVA O ITEM CORRESPONDENTE
+     DO MENU
+  */
+
+  document
+    .querySelectorAll(
+      ".nav[data-view]"
     )
-    .toLowerCase()
-    .replace(
-      /[_\s]+/g,
-      "-"
-    )
-    .trim();
-}
-
-
-/* ============================================================
-   IDENTIFICAR PÁGINA PELO TEXTO
-   ============================================================ */
-
-function identificarPaginaTexto(
-  texto
-) {
-
-  const t =
-    normalizarTexto(
-      texto
-    );
-
-
-  if (
-    t.includes("visao geral")
-  ) {
-    return "visao-geral";
-  }
-
-
-  if (
-    t === "conversas" ||
-    t.includes("conversas")
-  ) {
-    return "conversas";
-  }
-
-
-  if (
-    t === "funil" ||
-    t.includes("funil")
-  ) {
-    return "funil";
-  }
-
-
-  if (
-    t.includes("analise")
-  ) {
-    return "analise";
-  }
-
-
-  if (
-    t.includes("anotacoes")
-  ) {
-    return "anotacoes";
-  }
-
-
-  if (
-    t.includes("configuracoes")
-  ) {
-    return "configuracoes";
-  }
-
-
-  return null;
-}
-
-
-/* ============================================================
-   ATUALIZAR MENU ATIVO
-   ============================================================ */
-
-function atualizarMenuAtivo(
-  pagina
-) {
-
-  const itens =
-    document.querySelectorAll(
-      "aside a, aside button, nav a, nav button, [data-page]"
-    );
-
-
-  itens.forEach(
-    item => {
-
-      const dataPage =
-        item.getAttribute(
-          "data-page"
-        );
-
-
-      const texto =
-        item.textContent ||
-        "";
-
-
-      const paginaItem =
-        dataPage
-          ? normalizarNomePagina(
-              dataPage
-            )
-          : identificarPaginaTexto(
-              texto
-            );
-
-
-      const ativo =
-        paginaItem ===
-        normalizarNomePagina(
-          pagina
-        );
-
+    .forEach(item => {
 
       item.classList.toggle(
         "active",
-        ativo
+        item.dataset.view === nome
       );
 
-
-      /*
-         Preserva a classe existente
-         e apenas adiciona visual.
-      */
-
-      if (ativo) {
-
-        item.style.background =
-          "rgba(74, 103, 170, 0.45)";
-
-        item.style.color =
-          "#ffffff";
-
-      } else {
-
-        item.style.background =
-          "";
-
-        item.style.color =
-          "";
-      }
-    }
-  );
-}
-
-
-/* ============================================================
-   NAVEGAR
-   ============================================================ */
-
-function navegarParaPagina(
-  pagina
-) {
-
-  if (!pagina) {
-    return;
-  }
-
-
-  const nome =
-    normalizarNomePagina(
-      pagina
-    );
-
-
-  atualizarMenuAtivo(
-    nome
-  );
-
+    });
 
   /*
-     Se o projeto usa páginas HTML diferentes,
-     NÃO impedimos o link normal.
+     ATUALIZA O TÍTULO
+  */
+
+  if ($("title")) {
+
+    $("title").textContent =
+      TITULOS[nome];
+  }
+
+  /*
+     ATUALIZA HASH
   */
 
   try {
@@ -3459,7 +1265,7 @@ function navegarParaPagina(
 
       history.pushState(
         {
-          pagina: nome
+          view: nome
         },
         "",
         `#${nome}`
@@ -3474,234 +1280,1290 @@ function navegarParaPagina(
     );
   }
 
+  render();
+}
+
+function configurarMenu() {
+
+  document
+    .querySelectorAll(
+      ".nav[data-view]"
+    )
+    .forEach(item => {
+
+      item.onclick =
+        event => {
+
+          event.preventDefault();
+
+          mostrarPagina(
+            item.dataset.view
+          );
+
+        };
+
+    });
+}
+
+function carregarPaginaDoHash() {
+
+  const hash =
+    window.location.hash
+      .replace(/^#/, "");
+
+  const view =
+    TITULOS[hash]
+      ? hash
+      : "dashboard";
+
+  document
+    .querySelectorAll(".view")
+    .forEach(secao => {
+
+      secao.classList.toggle(
+        "active",
+        secao.id === view
+      );
+
+    });
+
+  document
+    .querySelectorAll(
+      ".nav[data-view]"
+    )
+    .forEach(item => {
+
+      item.classList.toggle(
+        "active",
+        item.dataset.view === view
+      );
+
+    });
+
+  if ($("title")) {
+
+    $("title").textContent =
+      TITULOS[view];
+  }
+}
+
+window.addEventListener(
+  "popstate",
+  carregarPaginaDoHash
+);
+
+window.addEventListener(
+  "hashchange",
+  carregarPaginaDoHash
+);
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+
+function renderDashboard(conversas) {
+
+  const total =
+    conversas.length;
+
+  const respondidas =
+    conversas.filter(
+      c =>
+        c.stage !== "Prospectado"
+    ).length;
+
+  const interessadas =
+    conversas.filter(
+      c =>
+        [
+          "Interessado",
+          "Pediu modelo",
+          "Orçamento / negociação",
+          "Venda fechada"
+        ].includes(c.stage)
+    ).length;
+
+  const fechadas =
+    conversas.filter(
+      c =>
+        c.stage ===
+        "Venda fechada"
+    ).length;
+
+  if ($("sTotal")) {
+    $("sTotal").textContent =
+      total;
+  }
+
+  if ($("sAnswered")) {
+    $("sAnswered").textContent =
+      respondidas;
+  }
+
+  if ($("sInterested")) {
+    $("sInterested").textContent =
+      interessadas;
+  }
+
+  if ($("sWon")) {
+    $("sWon").textContent =
+      fechadas;
+  }
+
+  if ($("navCount")) {
+    $("navCount").textContent =
+      total;
+  }
+
+  const max =
+    Math.max(
+      ...ETAPAS.map(
+        e =>
+          conversas.filter(
+            c =>
+              c.stage === e
+          ).length
+      ),
+      1
+    );
+
+  if ($("bars")) {
+
+    $("bars").innerHTML =
+      ETAPAS.map(etapa => {
+
+        const quantidade =
+          conversas.filter(
+            c =>
+              c.stage === etapa
+          ).length;
+
+        const largura =
+          quantidade
+            ? Math.max(
+                5,
+                quantidade /
+                  max *
+                  100
+              )
+            : 0;
+
+        return `
+          <div class="barline">
+
+            <div>
+              <span>
+                ${escaparHTML(etapa)}
+              </span>
+
+              <b>
+                ${quantidade}
+              </b>
+            </div>
+
+            <div class="bar">
+              <i
+                style="
+                  width:${largura}%;
+                "
+              ></i>
+            </div>
+
+          </div>
+        `;
+
+      }).join("");
+  }
+
+  const recentes =
+    [...conversas]
+      .sort(
+        (a, b) =>
+          String(b.updated)
+            .localeCompare(
+              String(a.updated)
+            )
+      )
+      .slice(0, 5);
+
+  if ($("recent")) {
+
+    $("recent").innerHTML =
+      recentes.length
+
+        ? recentes.map(
+            c => `
+              <div class="recent">
+
+                <b>
+                  ${escaparHTML(
+                    c.company
+                  )}
+                </b>
+
+                <small>
+                  ${escaparHTML(
+                    c.phone
+                  )}
+                  •
+                  ${escaparHTML(
+                    c.stage
+                  )}
+                  •
+                  ${escaparHTML(
+                    c.updated
+                  )}
+                </small>
+
+              </div>
+            `
+          ).join("")
+
+        : `
+          <div class="empty">
+            Nenhuma conversa registrada.
+          </div>
+        `;
+  }
+}
+
+/* ============================================================
+   CONVERSAS
+   ============================================================ */
+
+function renderConversas(conversas) {
+
+  const busca =
+    ($("search")?.value || "")
+      .toLowerCase()
+      .trim();
+
+  const filtro =
+    $("stageFilter")?.value || "";
+
+  const filtradas =
+    conversas.filter(c => {
+
+      const texto =
+        `${c.company} ${c.phone} ${c.note}`
+          .toLowerCase();
+
+      return (
+        (!busca ||
+          texto.includes(busca)) &&
+
+        (!filtro ||
+          c.stage === filtro)
+      );
+    });
+
+  if (!$("rows")) {
+    return;
+  }
+
+  $("rows").innerHTML =
+    filtradas.length
+
+      ? filtradas.map(
+          c => `
+            <tr>
+
+              <td>
+                <b>
+                  ${escaparHTML(
+                    c.company
+                  )}
+                </b>
+              </td>
+
+              <td>
+                ${escaparHTML(
+                  c.phone
+                )}
+              </td>
+
+              <td>
+                <span class="pill">
+                  ${escaparHTML(
+                    c.stage
+                  )}
+                </span>
+              </td>
+
+              <td>
+                ${escaparHTML(
+                  c.updated
+                )}
+              </td>
+
+              <td>
+
+                <button
+                  type="button"
+                  class="secondary view-btn"
+                  data-id="${c.id}"
+                >
+                  Ver conversa
+                </button>
+
+              </td>
+
+            </tr>
+          `
+        ).join("")
+
+      : `
+        <tr>
+          <td
+            colspan="5"
+            class="empty"
+          >
+            Nenhum resultado.
+          </td>
+        </tr>
+      `;
+
+  document
+    .querySelectorAll(".view-btn")
+    .forEach(botao => {
+
+      botao.onclick =
+        () =>
+          abrirConversa(
+            Number(
+              botao.dataset.id
+            )
+          );
+
+    });
+}
+
+/* ============================================================
+   FUNIL
+   ============================================================ */
+
+function renderFunil(conversas) {
+
+  if (!$("board")) {
+    return;
+  }
+
+  $("board").innerHTML =
+    ETAPAS.map(etapa => {
+
+      const contatos =
+        conversas.filter(
+          c =>
+            c.stage === etapa
+        );
+
+      return `
+        <div class="col">
+
+          <b>
+            ${escaparHTML(etapa)}
+            (${contatos.length})
+          </b>
+
+          ${
+            contatos.length
+
+              ? contatos.map(
+                  c => `
+                    <div
+                      class="ticket"
+                      data-id="${c.id}"
+                    >
+
+                      <b>
+                        ${escaparHTML(
+                          c.company
+                        )}
+                      </b>
+
+                      <small>
+                        ${escaparHTML(
+                          c.phone
+                        )}
+                      </small>
+
+                    </div>
+                  `
+                ).join("")
+
+              : `
+                <p class="empty">
+                  Nenhuma conversa.
+                </p>
+              `
+          }
+
+        </div>
+      `;
+
+    }).join("");
+
+  document
+    .querySelectorAll(
+      ".ticket[data-id]"
+    )
+    .forEach(ticket => {
+
+      ticket.onclick =
+        () =>
+          abrirConversa(
+            Number(
+              ticket.dataset.id
+            )
+          );
+
+    });
+}
+
+/* ============================================================
+   ANÁLISE
+   ============================================================ */
+
+function renderAnalise(conversas) {
+
+  const total =
+    conversas.length;
+
+  const respondidas =
+    conversas.filter(
+      c =>
+        c.stage !== "Prospectado"
+    ).length;
+
+  const interessadas =
+    conversas.filter(
+      c =>
+        [
+          "Interessado",
+          "Pediu modelo",
+          "Orçamento / negociação",
+          "Venda fechada"
+        ].includes(c.stage)
+    ).length;
+
+  const modelos =
+    conversas.filter(
+      c =>
+        [
+          "Pediu modelo",
+          "Orçamento / negociação",
+          "Venda fechada"
+        ].includes(c.stage)
+    ).length;
+
+  const vendas =
+    conversas.filter(
+      c =>
+        c.stage ===
+        "Venda fechada"
+    ).length;
+
+  if ($("responseRate")) {
+
+    $("responseRate").textContent =
+      total
+        ? `${Math.round(
+            respondidas /
+            total *
+            100
+          )}%`
+        : "0%";
+  }
+
+  if ($("interestRate")) {
+
+    $("interestRate").textContent =
+      respondidas
+        ? `${Math.round(
+            interessadas /
+            respondidas *
+            100
+          )}%`
+        : "0%";
+  }
+
+  if ($("modelRate")) {
+
+    $("modelRate").textContent =
+      total
+        ? `${Math.round(
+            modelos /
+            total *
+            100
+          )}%`
+        : "0%";
+  }
+
+  if ($("saleRate")) {
+
+    $("saleRate").textContent =
+      total
+        ? `${Math.round(
+            vendas /
+            total *
+            100
+          )}%`
+        : "0%";
+  }
+
+  const max =
+    Math.max(
+      ...ETAPAS.map(
+        e =>
+          conversas.filter(
+            c =>
+              c.stage === e
+          ).length
+      ),
+      1
+    );
+
+  if ($("dropoff")) {
+
+    $("dropoff").innerHTML =
+      ETAPAS.map(etapa => {
+
+        const quantidade =
+          conversas.filter(
+            c =>
+              c.stage === etapa
+          ).length;
+
+        const largura =
+          quantidade
+            ? Math.max(
+                4,
+                quantidade /
+                  max *
+                  100
+              )
+            : 0;
+
+        return `
+          <div class="barline">
+
+            <div>
+              <span>
+                ${escaparHTML(
+                  etapa
+                )}
+              </span>
+
+              <b>
+                ${quantidade}
+              </b>
+            </div>
+
+            <div class="bar">
+
+              <i
+                style="
+                  width:${largura}%;
+                "
+              ></i>
+
+            </div>
+
+          </div>
+        `;
+
+      }).join("");
+  }
+
+  const respostas =
+    conversas
+      .map(
+        c =>
+          Number(
+            c.firstReply
+          )
+      )
+      .filter(
+        n =>
+          n > 0
+      );
+
+  const media =
+    respostas.length
+      ? Math.round(
+          respostas.reduce(
+            (a, b) =>
+              a + b,
+            0
+          ) /
+          respostas.length
+        )
+      : 0;
+
+  const maisRapida =
+    respostas.length
+      ? Math.min(
+          ...respostas
+        )
+      : 0;
+
+  const maisDemorada =
+    respostas.length
+      ? Math.max(
+          ...respostas
+        )
+      : 0;
+
+  if ($("timing")) {
+
+    $("timing").innerHTML = `
+
+      <p>
+        <b>
+          Média até primeira resposta:
+        </b>
+
+        ${media}
+        minutos
+      </p>
+
+      <p>
+        <b>
+          Mais rápida:
+        </b>
+
+        ${maisRapida}
+        minutos
+      </p>
+
+      <p>
+        <b>
+          Mais demorada:
+        </b>
+
+        ${maisDemorada}
+        minutos
+      </p>
+
+    `;
+  }
+
+  if ($("insight")) {
+
+    $("insight").innerHTML = `
+
+      <h2>
+        Leitura dos dados
+      </h2>
+
+      <p>
+        Hoje há
+        <b>${respondidas}</b>
+        conversa(s) que responderam
+        e
+        <b>${interessadas}</b>
+        que chegaram a interesse,
+        pedido de modelo ou negociação.
+      </p>
+
+    `;
+  }
+}
+
+/* ============================================================
+   ANOTAÇÕES
+   ============================================================ */
+
+function renderNotas(conversas) {
+
+  if (!$("notesList")) {
+    return;
+  }
+
+  const anotacoes =
+    carregarAnotacoes();
+
+  const cards =
+    conversas.map(
+      c => `
+
+        <div
+          class="card notesItem"
+        >
+
+          <h3>
+
+            ${escaparHTML(
+              c.company
+            )}
+
+            <span class="pill">
+              ${escaparHTML(
+                c.stage
+              )}
+            </span>
+
+          </h3>
+
+          <p>
+            ${escaparHTML(
+              c.note ||
+              "Sem anotação."
+            )}
+          </p>
+
+          <small>
+            ${escaparHTML(
+              c.phone
+            )}
+          </small>
+
+        </div>
+
+      `
+    );
+
+  const extras =
+    anotacoes.map(
+      n => `
+
+        <div
+          class="card notesItem"
+        >
+
+          <h3>
+            Anotação
+          </h3>
+
+          <p>
+            ${escaparHTML(
+              n.texto
+            )}
+          </p>
+
+          <small>
+            ${escaparHTML(
+              n.data
+            )}
+          </small>
+
+        </div>
+
+      `
+    );
+
+  $("notesList").innerHTML =
+    [
+      ...cards,
+      ...extras
+    ].join("")
+    ||
+    `
+      <div
+        class="card empty"
+      >
+        Nenhuma anotação.
+      </div>
+    `;
+}
+
+/* ============================================================
+   RENDER GERAL
+   ============================================================ */
+
+function render() {
+
+  const conversas =
+    getConversas();
+
+  renderDashboard(
+    conversas
+  );
+
+  renderConversas(
+    conversas
+  );
+
+  renderFunil(
+    conversas
+  );
+
+  renderAnalise(
+    conversas
+  );
+
+  renderNotas(
+    conversas
+  );
+}
+
+/* ============================================================
+   MODAL DA CONVERSA
+   ============================================================ */
+
+function abrirConversa(id) {
+
+  const conversa =
+    getConversas().find(
+      c =>
+        Number(c.id) ===
+        Number(id)
+    );
+
+  if (!conversa) {
+    return;
+  }
+
+  selectedId =
+    conversa.id;
+
+  if ($("detailName")) {
+
+    $("detailName")
+      .textContent =
+      conversa.company;
+  }
+
+  if ($("detailMeta")) {
+
+    $("detailMeta")
+      .textContent =
+      `${conversa.phone} • ${conversa.stage} • última atividade ${conversa.updated}`;
+  }
+
+  if ($("detailSummary")) {
+
+    $("detailSummary")
+      .innerHTML = `
+
+        <b>
+          Etapa:
+        </b>
+
+        ${escaparHTML(
+          conversa.stage
+        )}
+
+        <br>
+
+        <b>
+          Tempo até primeira resposta:
+        </b>
+
+        ${
+          conversa.firstReply
+            ? `${conversa.firstReply} minutos`
+            : "Não respondeu"
+        }
+
+        <br>
+
+        <b>
+          Observação:
+        </b>
+
+        ${escaparHTML(
+          conversa.note ||
+          "Nenhuma"
+        )}
+
+      `;
+  }
+
+  if ($("detailNote")) {
+
+    $("detailNote").value =
+      conversa.note ||
+      "";
+  }
+
+  const historico =
+    Array.isArray(
+      conversa.history
+    )
+      ? conversa.history
+      : [];
+
+  if ($("history")) {
+
+    $("history").innerHTML =
+      historico.length
+
+        ? historico.map(
+            m => `
+
+              <div
+                class="bubble ${
+                  m.from === "client"
+                    ? "client"
+                    : "ig"
+                }"
+              >
+
+                ${escaparHTML(
+                  m.text
+                )}
+
+                <small>
+
+                  ${
+                    m.from === "client"
+                      ? "Cliente"
+                      : "IG Sites"
+                  }
+
+                  •
+                  ${escaparHTML(
+                    m.time || ""
+                  )}
+
+                </small>
+
+              </div>
+
+            `
+          ).join("")
+
+        : `
+          <div class="empty">
+            Nenhum histórico
+            importado/registrado
+            nesta conversa.
+          </div>
+        `;
+  }
+
+  if ($("conversationModal")) {
+
+    $("conversationModal")
+      .classList
+      .add("show");
+  }
+}
+
+/* ============================================================
+   NOVA CONVERSA
+   ============================================================ */
+
+function abrirNovaConversa() {
+
+  if ($("modal")) {
+
+    $("modal")
+      .classList
+      .add("show");
+  }
+}
+
+function salvarNovaConversa(event) {
+
+  event.preventDefault();
+
+  const formulario =
+    event.target;
+
+  const dados =
+    new FormData(
+      formulario
+    );
+
+  const conversas =
+    getConversas();
+
+  const telefone =
+    formatarTelefone(
+      dados.get("phone")
+    );
+
+  if (
+    telefoneJaExiste(
+      telefone,
+      conversas
+    )
+  ) {
+
+    alert(
+      "Este telefone já está cadastrado no CRM."
+    );
+
+    return;
+  }
+
+  conversas.push({
+
+    id: gerarId(),
+
+    company:
+      String(
+        dados.get(
+          "company"
+        ) || ""
+      ).trim(),
+
+    phone:
+      telefone,
+
+    stage:
+      String(
+        dados.get(
+          "stage"
+        ) ||
+        "Prospectado"
+      ),
+
+    firstReply:
+      Number(
+        dados.get(
+          "firstReply"
+        ) || 0
+      ),
+
+    updated:
+      hoje(),
+
+    note:
+      String(
+        dados.get(
+          "note"
+        ) || ""
+      ).trim(),
+
+    history: []
+  });
+
+  salvarConversas(
+    conversas
+  );
+
+  formulario.reset();
+
+  if ($("modal")) {
+
+    $("modal")
+      .classList
+      .remove("show");
+  }
 
   render();
 }
 
-
 /* ============================================================
-   CONFIGURAR MENU
+   SALVAR ANOTAÇÃO
    ============================================================ */
 
-function configurarMenuLateral() {
+function salvarAnotacaoConversa() {
 
-  const itens =
-    document.querySelectorAll(
-      "aside a, aside button, nav a, nav button, [data-page]"
+  const conversas =
+    getConversas();
+
+  const conversa =
+    conversas.find(
+      c =>
+        Number(c.id) ===
+        Number(selectedId)
     );
 
+  if (!conversa) {
+    return;
+  }
 
-  itens.forEach(
-    item => {
+  conversa.note =
+    $("detailNote")
+      .value
+      .trim();
 
-      if (
-        item.dataset
-          .igMenuConfigurado ===
-        "true"
-      ) {
+  conversa.updated =
+    hoje();
 
-        return;
-      }
+  salvarConversas(
+    conversas
+  );
 
+  const anotacoes =
+    carregarAnotacoes();
 
-      item.dataset
-        .igMenuConfigurado =
-        "true";
+  anotacoes.unshift({
 
+    data: hoje(),
 
-      item.addEventListener(
-        "click",
-        function(event) {
+    texto:
+      `${conversa.company}: ${
+        conversa.note ||
+        "Anotação removida."
+      }`
 
-          const href =
-            item.getAttribute(
-              "href"
-            );
+  });
 
+  salvarAnotacoes(
+    anotacoes
+  );
 
-          const dataPage =
-            item.getAttribute(
-              "data-page"
-            );
+  render();
 
-
-          /*
-             Se existe um href real,
-             deixamos o navegador trabalhar.
-
-             Isso evita quebrar menus que já
-             possuem páginas HTML.
-          */
-
-          if (
-            href &&
-            href !== "#" &&
-            !href.startsWith(
-              "javascript:"
-            )
-          ) {
-
-            return;
-          }
-
-
-          const pagina =
-            dataPage
-              ? normalizarNomePagina(
-                  dataPage
-                )
-              : identificarPaginaTexto(
-                  item.textContent
-                );
-
-
-          if (!pagina) {
-            return;
-          }
-
-
-          event.preventDefault();
-
-
-          navegarParaPagina(
-            pagina
-          );
-        }
-      );
-    }
+  abrirConversa(
+    conversa.id
   );
 }
 
-
 /* ============================================================
-   HISTÓRICO DO NAVEGADOR
+   SELECTS
    ============================================================ */
 
-window.addEventListener(
-  "popstate",
-  function() {
+function preencherSelects() {
 
-    const pagina =
-      window.location.hash
-        .replace(
-          "#",
-          ""
-        )
-        .trim();
+  if ($("stageFilter")) {
 
+    $("stageFilter")
+      .innerHTML =
+      `
+        <option value="">
+          Todas as etapas
+        </option>
+      ` +
 
-    if (pagina) {
-
-      atualizarMenuAtivo(
-        pagina
-      );
-
-    } else {
-
-      atualizarMenuAtivo(
-        "visao-geral"
-      );
-    }
-
-
-    render();
+      ETAPAS.map(
+        e =>
+          `
+            <option
+              value="${escaparHTML(e)}"
+            >
+              ${escaparHTML(e)}
+            </option>
+          `
+      ).join("");
   }
-);
 
+  if ($("newStage")) {
+
+    $("newStage")
+      .innerHTML =
+      ETAPAS.map(
+        e =>
+          `
+            <option
+              value="${escaparHTML(e)}"
+            >
+              ${escaparHTML(e)}
+            </option>
+          `
+      ).join("");
+  }
+}
 
 /* ============================================================
    INICIALIZAÇÃO
    ============================================================ */
 
-function inicializarIGSitesCRM() {
-
-  /*
-     Garantir storage.
-  */
+function inicializar() {
 
   carregarConversas();
 
+  preencherSelects();
 
-  /*
-     Interface de importação.
-  */
+  configurarMenu();
 
-  criarInterfaceImportacao();
+  criarBotaoImportar();
 
   criarModalImportacao();
 
+  $("search")
+    ?.addEventListener(
+      "input",
+      render
+    );
 
-  /*
-     Estilos.
-  */
+  $("stageFilter")
+    ?.addEventListener(
+      "change",
+      render
+    );
 
-  aplicarEstilos();
+  $("newConversation")
+    ?.addEventListener(
+      "click",
+      abrirNovaConversa
+    );
 
+  $("newConversation2")
+    ?.addEventListener(
+      "click",
+      abrirNovaConversa
+    );
 
-  /*
-     Filtros.
-  */
+  $("cancel")
+    ?.addEventListener(
+      "click",
+      () =>
+        $("modal")
+          .classList
+          .remove("show")
+    );
 
-  configurarFiltros();
+  $("form")
+    ?.addEventListener(
+      "submit",
+      salvarNovaConversa
+    );
 
-  configurarFiltroEtapas();
+  $("closeDetail")
+    ?.addEventListener(
+      "click",
+      () =>
+        $("conversationModal")
+          .classList
+          .remove("show")
+    );
 
+  $("saveNote")
+    ?.addEventListener(
+      "click",
+      salvarAnotacaoConversa
+    );
 
-  /*
-     Menu.
-  */
+  $("modal")
+    ?.addEventListener(
+      "click",
+      event => {
 
-  configurarMenuLateral();
+        if (
+          event.target ===
+          $("modal")
+        ) {
 
+          $("modal")
+            .classList
+            .remove("show");
+        }
 
-  /*
-     Render inicial.
-  */
+      }
+    );
+
+  $("conversationModal")
+    ?.addEventListener(
+      "click",
+      event => {
+
+        if (
+          event.target ===
+          $("conversationModal")
+        ) {
+
+          $("conversationModal")
+            .classList
+            .remove("show");
+        }
+
+      }
+    );
+
+  carregarPaginaDoHash();
 
   render();
-
-
-  /*
-     Atualizar menu.
-  */
-
-  const paginaAtual =
-    window.location.hash
-      .replace(
-        "#",
-        ""
-      )
-      .trim();
-
-
-  atualizarMenuAtivo(
-    paginaAtual ||
-    "visao-geral"
-  );
-
-
-  console.log(
-    "IG Sites Gestão de Conversas iniciado."
-  );
-
-
-  console.log(
-    "Importador: funciona com ou sem linhas em branco."
-  );
-
-
-  console.log(
-    "WhatsApp: somente análise, nenhum envio."
-  );
 }
-
 
 /* ============================================================
    FUNÇÕES GLOBAIS
    ============================================================ */
-
-window.render =
-  render;
 
 window.analisarLista =
   analisarLista;
@@ -3709,36 +2571,17 @@ window.analisarLista =
 window.importarContatos =
   importarContatos;
 
-window.abrirModalImportacao =
-  abrirModalImportacao;
+window.abrirConversa =
+  abrirConversa;
 
-window.fecharModalImportacao =
-  fecharModalImportacao;
+window.mostrarPagina =
+  mostrarPagina;
 
-window.adicionarConversaManual =
-  adicionarConversaManual;
-
-window.atualizarEtapa =
-  atualizarEtapa;
-
-window.adicionarHistorico =
-  adicionarHistorico;
-
-window.exportarConversas =
-  exportarConversas;
-
-window.restaurarDadosDemo =
-  restaurarDadosDemo;
-
-window.detectarEtapa =
-  detectarEtapa;
-
-window.navegarParaPagina =
-  navegarParaPagina;
-
+window.render =
+  render;
 
 /* ============================================================
-   START
+   INICIAR
    ============================================================ */
 
 if (
@@ -3748,10 +2591,11 @@ if (
 
   document.addEventListener(
     "DOMContentLoaded",
-    inicializarIGSitesCRM
+    inicializar
   );
 
 } else {
 
-  inicializarIGSitesCRM();
+  inicializar();
+
 }
